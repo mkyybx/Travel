@@ -3,10 +3,6 @@ import java.sql.*;
 import javax.swing.JOptionPane;
 import java.util.Date;
 
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/master
 public class Main 
 {
 	public static Statement st;//公共语句

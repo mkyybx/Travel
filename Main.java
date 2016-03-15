@@ -13,10 +13,38 @@ public class Main
 	public static String NAME;//登陆名
 	public static String PASSWORD;//登陆密码
 	
+	//重置为当前时间的函数
 	public static Date renewTime() 
 	{
 		return new Date(System.currentTimeMillis());
 	}
+	
+	//显示错误信息函数
+	public static void showMessage(String s) {
+		JOptionPane.showMessageDialog(null, s, "错误",JOptionPane.ERROR_MESSAGE);
+	}
+	public static void showMessage(String s, java.awt.Frame f) {
+		JOptionPane.showMessageDialog(f, s, "错误",JOptionPane.ERROR_MESSAGE);
+	}
+	public static void showMessage(String s, java.awt.Frame f, boolean isError) {
+		if (isError)
+			JOptionPane.showMessageDialog(f, s, "错误",JOptionPane.ERROR_MESSAGE);
+		else JOptionPane.showMessageDialog(f, s, "提示",JOptionPane.INFORMATION_MESSAGE);
+	}
+	
+	//记录日志函数
+	public static void log(String s) {
+		log.print(renewTime().toString() + ":");
+		log.println(s);
+		log.flush();
+	}
+	
+	//重绘函数
+	public static void repaint(javax.swing.JPanel p) {
+		p.updateUI();
+		p.repaint();
+	}
+	
 	public static void main(String args[]) throws Exception 
 	{
 		//记录日志
@@ -26,14 +54,14 @@ public class Main
 		} 
 		catch (Exception e) 
 		{
-			JOptionPane.showMessageDialog(null, "日志无法写入，请检查travel.log的可写性！", "错误",JOptionPane.PLAIN_MESSAGE);
+			showMessage("日志无法写入，请检查travel.log的可写性！");
 			System.exit(0);
 		}
-		log.println(renewTime().toString() + ":系统启动！");
+		log("系统启动！");
 		
 		//加载MySQL驱动
 		Class.forName("com.mysql.jdbc.Driver");
-		log.println(renewTime().toString() + ":驱动加载成功！");
+		log("驱动加载成功！");
 		//建立连接
 		try 
 		{
@@ -42,11 +70,11 @@ public class Main
 		}
 		catch (Exception e) 
 		{
-			JOptionPane.showMessageDialog(null, "数据库连接错误", "错误",JOptionPane.PLAIN_MESSAGE);
-			log.println(renewTime().toString() + ":建立数据库连接失败");
+			showMessage("数据库连接错误");
+			log("建立数据库连接失败");
 			System.exit(0);
 		}
-		log.println(renewTime().toString() + ":建立数据库连接成功！");
+		log("建立数据库连接成功！");
 		//读取城市信息
 		result = st.executeQuery("select * from city");
 		result.last();

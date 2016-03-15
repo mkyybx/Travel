@@ -1,15 +1,24 @@
 import java.sql.*;
-
 import javax.swing.*;
-
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class MainFrameBlank extends JFrame {
+	public static JFrame frame;
 	public static boolean isOrdered;//是否按顺序旅游
+	public static int startTime;//出发时间
+	public static int limitedTime;//限制的时间
+	public static char strategy;//旅行策略：1、时间最短2、金钱最少3、时间限定金钱最少
+	public static boolean isNumber(String s) {
+		for (int i = 0; i < s.length(); i++) {
+			if (!Character.isDigit(s.charAt(i)))
+				return false;
+		}
+		return true;	
+	}
 	public static void MFBMain() {
-		JFrame frame = new MainFrameBlank();
+		frame = new MainFrameBlank();
 		frame.setTitle("旅行规划系统Powered by 沐晓枫&茶叶");
 		frame.pack();
 		frame.setLocationRelativeTo(null);
@@ -26,6 +35,8 @@ public class MainFrameBlank extends JFrame {
 		JRadioButton jrbisordered=new JRadioButton("是否按顺序旅游");
 		JList jldepart = new JList((Object[])Main.city);
 		JList jlarrive = new JList();
+		jldepart.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+		jlarrive.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 		JPanel button = new JPanel(new GridLayout(4,1));//中间按钮button
 		//button的东东
 		JButton jbtr = new JButton(">>");
@@ -50,7 +61,7 @@ public class MainFrameBlank extends JFrame {
 		JRadioButton jrb1 = new JRadioButton("最短时间",true);
 		JRadioButton jrb2 = new JRadioButton("最便宜",false);
 		JRadioButton jrb3 = new JRadioButton("规定时间内最便宜",false);
-		JTextField jtf1 = new JTextField(2);
+		JTextField jtf1 = new JTextField(3);
 		JLabel l3 = new JLabel("小时");
 		ActionListener buttonListener = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -62,8 +73,7 @@ public class MainFrameBlank extends JFrame {
 					pm.remove(jtf1);
 					pm.remove(l3);
 				}
-				pm.updateUI();
-				pm.repaint();
+				Main.repaint(pm);
 			}
 		};
 		jrb1.addActionListener(buttonListener);
@@ -78,52 +88,84 @@ public class MainFrameBlank extends JFrame {
 		pm.add(jrb3);
 		//结束
 		
-		JPanel pd = new JPanel();//下面的panel
-		//pd的东东
-		pd.add(jbtok);
-		pd.add(jbtcancel);
-		//结束
 		JPanel stay = new JPanel(new GridLayout(1,4));//停留时间的panel
-		JPanel startTime = new JPanel(new GridLayout(1,3));//输入出发时间用panel
-		this.add(pu);
-		this.add(pm);
-		this.add(pd);
-		this.add(button);
-		this.add(stay);
-		this.add(startTime);
-		JButton jbtok = new JButton("确定");
-		JLabel jlprompt = new JLabel("PS：已选城市第一个为出发城市，选中已选城市可以添加停留时间，默认不停留");
-		jldepart.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-		jlarrive.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-		jbtok.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (jrbisordered.isSelected())
-					isOrdered = true;
-				else isOrdered = false;
-				//if ()
-			}
-		});
-		JButton jbtcancel = new JButton("取消");
-		jbtcancel.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				System.exit(0);
-			}
-		});
+		//stay的东东
 		JLabel l4 = new JLabel("请输入停留时间:");
-		JTextField jtfstay = new JTextField();
+		JTextField jtfstay = new JTextField(3);
 		JLabel l5 = new JLabel("小时");
 		JButton jbtstay = new JButton("确定");
 		stay.add(l4);
 		stay.add(jtfstay);
 		stay.add(l5);
 		stay.add(jbtstay);
-		this.add(jlprompt);//新加的，你排一下版
-		JLabel jlbstart1 = new JLabel("请输入出发时间：");
-		JTextField jtfstart = new JTextField();
+		//结束
+		
+		JPanel startTime = new JPanel(new GridLayout(1,3));//输入出发时间用panel
+		//startTime的东东
+		JLabel jlbstart1 = new JLabel("请输入出发时间(不输入默认为当前时间)：");
+		JTextField jtfstart = new JTextField(2);
 		JLabel jlbstart2 = new JLabel("时");
 		startTime.add(jlbstart1);
 		startTime.add(jtfstart);
 		startTime.add(jlbstart2);
+		//结束
+		
+		JPanel pd = new JPanel();//下面的panel
+		//pd的东东
+		JButton jbtok = new JButton("确定");
+		JButton jbtcancel = new JButton("取消");
+		jbtok.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//记录是否按顺序旅行
+				if (jrbisordered.isSelected())
+					isOrdered = true;
+				else isOrdered = false;
+				//起始时间输入过滤
+				if (jtfstart.getText().equals(""))
+					MainFrameBlank.startTime = Integer.parseInt(Main.renewTime().toString().substring(11, 13));
+				else if (jtfstart.getText().length()>2)
+					Main.showMessage("起始时间有误(数据过长)");
+				else if (!isNumber(jtfstart.getText()))
+					Main.showMessage("起始时间有误(不是数字)");
+				else {
+					MainFrameBlank.startTime = Integer.parseInt(jtfstart.getText());
+					if (MainFrameBlank.startTime < 0 || MainFrameBlank.startTime >= 24)
+						Main.showMessage("起始时间有误(不是时间)");
+				}
+				//策略输入过滤
+				if (jrb1.isSelected())
+					strategy = 1;
+				else if (jrb2.isSelected())
+					strategy = 2;
+				else if (jrb3.isSelected()) {
+					strategy = 3;
+					if (jtf1.getText().equals(""))
+						Main.showMessage("限制时间不能为空");
+					else if (!isNumber(jtf1.getText()))
+						Main.showMessage("限制时间有误(不是数字)");
+					else
+						limitedTime = Integer.parseInt(jtf1.getText());
+				}
+				
+			}
+		});
+		jbtcancel.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.exit(0);
+			}
+		});
+		pd.add(jbtok);
+		pd.add(jbtcancel);
+		//结束
+		
+		this.add(pu);
+		this.add(pm);
+		this.add(pd);
+		this.add(button);
+		this.add(stay);
+		this.add(startTime);
+		JLabel jlprompt = new JLabel("PS：已选城市第一个为出发城市，选中已选城市可以添加停留时间，默认不停留");
+		this.add(jlprompt);//新加的，你排一下版
 	}
 }
 

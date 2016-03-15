@@ -131,6 +131,23 @@ public class MainFrameBlank extends JFrame {
 		JTextField jtfstay = new JTextField(3);
 		JLabel l5 = new JLabel("小时");
 		JButton jbtstay = new JButton("确定");
+		jbtstay.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (jtfstay.getText().equals(""))
+					Main.showMessage("停留时间不能为空");
+				else if (!isNumber(jtfstay.getText()))
+					Main.showMessage("限制时间有误(不是数字)");
+				else {
+				try {
+					((city)(selected.get(jlarrive.getSelectedIndex()))).stayTime = Integer.parseInt(jtfstay.getText());
+					jldepart.setListData(unselected.toArray());
+					jlarrive.setListData(selected.toArray());
+					
+				} catch (Exception ex) {
+					
+				}
+			}
+		}});
 		stay.add(l4);
 		stay.add(jtfstay);
 		stay.add(l5);
@@ -153,25 +170,31 @@ public class MainFrameBlank extends JFrame {
 		JButton jbtcancel = new JButton("取消");
 		jbtok.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//test
-				//unselected[0] = null;
-				Main.repaint(pu);
-				//test
+				boolean pass = false;
 				//记录是否按顺序旅行
 				if (jrbisordered.isSelected())
 					isOrdered = true;
 				else isOrdered = false;
 				//起始时间输入过滤
-				if (jtfstart.getText().equals(""))
+				if (jtfstart.getText().equals("")) {
 					MainFrameBlank.startTime = Integer.parseInt(Main.renewTime().toString().substring(11, 13));
-				else if (jtfstart.getText().length()>2)
+					pass = true;
+				}
+				else if (jtfstart.getText().length()>2) {
 					Main.showMessage("起始时间有误(数据过长)");
-				else if (!isNumber(jtfstart.getText()))
+					pass = false;
+				}
+				else if (!isNumber(jtfstart.getText())) {
 					Main.showMessage("起始时间有误(不是数字)");
+					pass = false;
+				}
 				else {
+					pass = true;
 					MainFrameBlank.startTime = Integer.parseInt(jtfstart.getText());
-					if (MainFrameBlank.startTime < 0 || MainFrameBlank.startTime >= 24)
+					if (MainFrameBlank.startTime < 0 || MainFrameBlank.startTime >= 24) {
 						Main.showMessage("起始时间有误(不是时间)");
+						pass = false;
+					}
 				}
 				//策略输入过滤
 				if (jrb1.isSelected())
@@ -180,14 +203,26 @@ public class MainFrameBlank extends JFrame {
 					strategy = 2;
 				else if (jrb3.isSelected()) {
 					strategy = 3;
-					if (jtf1.getText().equals(""))
+					if (jtf1.getText().equals("")) {
 						Main.showMessage("限制时间不能为空");
-					else if (!isNumber(jtf1.getText()))
+						pass = false;
+					}
+					else if (!isNumber(jtf1.getText())) {
 						Main.showMessage("限制时间有误(不是数字)");
-					else
+						pass = false;
+					}
+					else {
 						limitedTime = Integer.parseInt(jtf1.getText());
+						pass = true;
+					}
 				}
-				//列表过滤（待完成）
+				//列表过滤
+				if (selected.size() <= 1) {
+					Main.showMessage("旅行城市至少需要两个(包括一个出发城市)");
+					pass = false;
+				}
+				if (pass)
+					Calculate.CMain();
 			}
 		});
 		jbtcancel.addActionListener(new ActionListener() {

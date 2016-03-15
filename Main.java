@@ -1,13 +1,15 @@
 ﻿import java.io.*;
 import java.sql.*;
+
 import javax.swing.JOptionPane;
+
+import java.util.ArrayList;
 import java.util.Date;
 
 public class Main 
 {
 	public static Statement st;//公共语句
 	public static ResultSet result;//公共语句
-	public static String[] city;//城市数组
 	public static PrintWriter log;//日志写入对象
 	public static Date dateinit = new java.util.Date();//启动时间
 	public static String NAME;//登陆名
@@ -77,19 +79,28 @@ public class Main
 		log("建立数据库连接成功！");
 		//读取城市信息
 		result = st.executeQuery("select * from city");
-		result.last();
-		city = new String[result.getRow()];
-		result.first();
-		for (int i = 0; i < city.length; i++) 
-		{
-			city[i] = result.getString(2);
-			result.next();
-		}
+		MainFrameBlank.unselected = new ArrayList();
+		MainFrameBlank.selected = new ArrayList();
+		while (result.next())
+			MainFrameBlank.unselected.add(new city(result.getString(2)));
 		//test
 		MainFrameBlank.MFBMain();
 		//test
 		//Login.login();//登录，交给下一个函数
 		
 		log.close();
+	}
+}
+
+class city {
+	public String name;
+	public int stayTime;
+	
+	public String toString() {
+		return name.concat("(" + Integer.toString(stayTime) + ")");
+	}
+	
+	city(String name) {
+		this.name = name;
 	}
 }

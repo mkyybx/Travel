@@ -1,5 +1,8 @@
 import java.sql.*;
+import java.util.ArrayList;
+
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,6 +13,8 @@ public class MainFrameBlank extends JFrame {
 	public static int startTime;//出发时间
 	public static int limitedTime;//限制的时间
 	public static char strategy;//旅行策略：1、时间最短2、金钱最少3、时间限定金钱最少
+	public static ArrayList unselected;//未选城市
+	public static ArrayList selected;//已选城市
 	public static boolean isNumber(String s) {
 		for (int i = 0; i < s.length(); i++) {
 			if (!Character.isDigit(s.charAt(i)))
@@ -33,8 +38,8 @@ public class MainFrameBlank extends JFrame {
 		JLabel l1 = new JLabel("已选城市：",JLabel.CENTER);
 		JLabel l2 = new JLabel("可选城市：",JLabel.CENTER);
 		JRadioButton jrbisordered=new JRadioButton("是否按顺序旅游");
-		JList jldepart = new JList((Object[])Main.city);
-		JList jlarrive = new JList();
+		JList jldepart = new JList(unselected.toArray());
+		JList jlarrive = new JList(selected.toArray());
 		jldepart.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 		jlarrive.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 		JPanel button = new JPanel(new GridLayout(4,1));//中间按钮button
@@ -43,10 +48,42 @@ public class MainFrameBlank extends JFrame {
 		JButton jbtl = new JButton("<<");
 		JButton jbtu = new JButton("↑");
 		JButton jbtd = new JButton("↓");
+		ActionListener listListener = new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					if(e.getSource().equals(jbtr)) {
+						selected.add((city)jldepart.getSelectedValue());
+						unselected.remove(jldepart.getSelectedIndex());
+					}
+					else if(e.getSource().equals(jbtl)) {
+						unselected.add((city)jlarrive.getSelectedValue());
+						selected.remove(jlarrive.getSelectedIndex());
+					}
+					else if (e.getSource().equals(jbtu)) {
+						Object temp = selected.get(jlarrive.getSelectedIndex() - 1);
+						selected.set(jlarrive.getSelectedIndex() - 1, jlarrive.getSelectedValue());
+						selected.set(jlarrive.getSelectedIndex(), temp);
+					}
+					else if (e.getSource().equals(jbtd)) {
+						Object temp = selected.get(jlarrive.getSelectedIndex() + 1);
+						selected.set(jlarrive.getSelectedIndex() + 1, jlarrive.getSelectedValue());
+						selected.set(jlarrive.getSelectedIndex(), temp);
+					}
+					jldepart.setListData(unselected.toArray());
+					jlarrive.setListData(selected.toArray());
+				}catch(Exception ex) {
+					
+				}
+			}
+		};
 		button.add(jbtd);
 		button.add(jbtu);
 		button.add(jbtl);
 		button.add(jbtr);
+		jbtd.addActionListener(listListener);
+		jbtu.addActionListener(listListener);
+		jbtl.addActionListener(listListener);
+		jbtr.addActionListener(listListener);
 		pu.add(button);
 		//结束
 		pu.add(l1);
@@ -116,6 +153,10 @@ public class MainFrameBlank extends JFrame {
 		JButton jbtcancel = new JButton("取消");
 		jbtok.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				//test
+				//unselected[0] = null;
+				Main.repaint(pu);
+				//test
 				//记录是否按顺序旅行
 				if (jrbisordered.isSelected())
 					isOrdered = true;
@@ -146,7 +187,7 @@ public class MainFrameBlank extends JFrame {
 					else
 						limitedTime = Integer.parseInt(jtf1.getText());
 				}
-				
+				//列表过滤（待完成）
 			}
 		});
 		jbtcancel.addActionListener(new ActionListener() {

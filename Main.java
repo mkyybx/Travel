@@ -4,6 +4,7 @@ import java.sql.*;
 import javax.swing.JOptionPane;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 
 public class Main 
@@ -78,10 +79,10 @@ public class Main
 		}
 		log("建立数据库连接成功！");
 		//读取城市信息
-		result = st.executeQuery("select * from city");
+		result = st.executeQuery("select * from city order by cityabbr asc");
 		MainFrameBlank.unselected = new ArrayList();
 		MainFrameBlank.selected = new ArrayList();
-		while (result.next())
+		while (result.next()) 
 			MainFrameBlank.unselected.add(new city(result.getString(2)));
 		//test
 		MainFrameBlank.MFBMain();

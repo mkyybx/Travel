@@ -38,6 +38,7 @@ public class MainFrameBlank extends JFrame {
 		JLabel l1 = new JLabel("已选城市：",JLabel.CENTER);
 		JLabel l2 = new JLabel("可选城市：",JLabel.CENTER);
 		JRadioButton jrbisordered=new JRadioButton("是否按顺序旅游");
+		
 		JList jldepart = new JList(unselected.toArray());
 		JList jlarrive = new JList(selected.toArray());
 		jldepart.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
@@ -89,8 +90,8 @@ public class MainFrameBlank extends JFrame {
 		pu.add(l1);
 		pu.add(jrbisordered);
 		pu.add(l2);
-		pu.add(jldepart);
-		pu.add(jlarrive);
+		pu.add(new JScrollPane(jldepart));
+		pu.add(new JScrollPane(jlarrive));
 		//结束
 		
 		JPanel pm = new JPanel();//中间的panel

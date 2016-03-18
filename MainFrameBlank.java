@@ -24,16 +24,21 @@ public class MainFrameBlank extends JFrame {
 	}
 	public static void MFBMain() {
 		frame = new MainFrameBlank();
-		frame.setTitle("旅行规划系统Powered by 沐晓枫&茶叶");
+		frame.setTitle("旅行规划系统Powered by 沐晓枫&按键三&老鹰飞了");
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		frame.setVisible(true);
 	}
 	MainFrameBlank() {
-		setLayout(new GridLayout(5,1));
+		//setLayout(new GridLayout(0,1));
+		setLayout(new BorderLayout());
 		
-		JPanel pu = new JPanel(new GridLayout(2,3));//上面的panel
+		JPanel pu = new JPanel(new BorderLayout());//上面的panel
+		
+		JPanel putop = new JPanel(new GridLayout(0,3));
+		JPanel pubuttom = new JPanel(new GridLayout(0,3));
+		
 		//pu的东东
 		JLabel l1 = new JLabel("已选城市：",JLabel.CENTER);
 		JLabel l2 = new JLabel("可选城市：",JLabel.CENTER);
@@ -85,13 +90,13 @@ public class MainFrameBlank extends JFrame {
 		jbtu.addActionListener(listListener);
 		jbtl.addActionListener(listListener);
 		jbtr.addActionListener(listListener);
-		pu.add(button);
 		//结束
-		pu.add(l1);
-		pu.add(jrbisordered);
-		pu.add(l2);
-		pu.add(new JScrollPane(jldepart));
-		pu.add(new JScrollPane(jlarrive));
+		putop.add(l2);
+		putop.add(jrbisordered);
+		putop.add(l1);
+		pubuttom.add(new JScrollPane(jldepart));
+		pubuttom.add(button);
+		pubuttom.add(new JScrollPane(jlarrive));
 		//结束
 		
 		JPanel pm = new JPanel();//中间的panel
@@ -99,7 +104,7 @@ public class MainFrameBlank extends JFrame {
 		JRadioButton jrb1 = new JRadioButton("最短时间",true);
 		JRadioButton jrb2 = new JRadioButton("最便宜",false);
 		JRadioButton jrb3 = new JRadioButton("规定时间内最便宜",false);
-		JTextField jtf1 = new JTextField(3);
+		JTextField jtf1 = new JTextField(10);
 		JLabel l3 = new JLabel("小时");
 		ActionListener buttonListener = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -126,9 +131,9 @@ public class MainFrameBlank extends JFrame {
 		pm.add(jrb3);
 		//结束
 		
-		JPanel stay = new JPanel(new GridLayout(1,4));//停留时间的panel
+		JPanel stay = new JPanel();//停留时间的panel
 		//stay的东东
-		JLabel l4 = new JLabel("请输入停留时间:");
+		JLabel l4 = new JLabel("请输入停留时间:",JLabel.RIGHT);
 		JTextField jtfstay = new JTextField(3);
 		JLabel l5 = new JLabel("小时");
 		JButton jbtstay = new JButton("确定");
@@ -149,16 +154,18 @@ public class MainFrameBlank extends JFrame {
 				}
 			}
 		}});
-		stay.add(l4);
-		stay.add(jtfstay);
-		stay.add(l5);
+		JPanel stayl=new JPanel(new GridLayout(1,3));
+		stayl.add(l4);
+		stayl.add(jtfstay);
+		stayl.add(l5);
+		stay.add(stayl);
 		stay.add(jbtstay);
 		//结束
 		
-		JPanel startTime = new JPanel(new GridLayout(1,3));//输入出发时间用panel
+		JPanel startTime = new JPanel();//输入出发时间用panel
 		//startTime的东东
 		JLabel jlbstart1 = new JLabel("请输入出发时间(不输入默认为当前时间)：");
-		JTextField jtfstart = new JTextField(2);
+		JTextField jtfstart = new JTextField(10);
 		JLabel jlbstart2 = new JLabel("时");
 		startTime.add(jlbstart1);
 		startTime.add(jtfstart);
@@ -235,14 +242,30 @@ public class MainFrameBlank extends JFrame {
 		pd.add(jbtcancel);
 		//结束
 		
-		this.add(pu);
-		this.add(pm);
-		this.add(pd);
-		this.add(button);
-		this.add(stay);
-		this.add(startTime);
+		JPanel test1=new JPanel(new BorderLayout());
+		pu.add(putop,BorderLayout.NORTH);
+		pu.add(pubuttom,BorderLayout.CENTER);
+		test1.add(pu,BorderLayout.CENTER);
+		test1.add(pm,BorderLayout.SOUTH);
+		JPanel test2=new JPanel(new GridLayout(0,1));
+		test2.add(stay);
+		test2.add(startTime);
+		test2.add(pd);
 		JLabel jlprompt = new JLabel("PS：已选城市第一个为出发城市，选中已选城市可以添加停留时间，默认不停留");
-		this.add(jlprompt);//新加的，你排一下版
+      test2.add(jlprompt);
+		
+		
+		this.add(test1,BorderLayout.CENTER);
+		this.add(test2,BorderLayout.SOUTH);
+		
+//		this.add(pu);
+//		this.add(pm);
+//		this.add(button);
+//		this.add(stay);
+//		this.add(startTime);
+//		this.add(pd);
+//		JLabel jlprompt = new JLabel("PS：已选城市第一个为出发城市，选中已选城市可以添加停留时间，默认不停留");
+//		this.add(jlprompt);//新加的，你排一下版
 	}
 }
 

@@ -1,5 +1,6 @@
 ﻿import java.io.*;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 
 import javax.swing.JOptionPane;
 
@@ -83,7 +84,16 @@ public class Main
 		MainFrameBlank.unselected = new ArrayList();
 		MainFrameBlank.selected = new ArrayList();
 		while (result.next()) 
-			MainFrameBlank.unselected.add(new city(result.getString(2)));
+			MainFrameBlank.unselected.add(new city(result.getString(3).charAt(0),result.getString(2),Integer.parseInt(result.getString(1))));
+		//test
+				SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+				try {
+				Date d1 = sdf.parse("990:00:00");
+				System.out.println(d1.getTime());
+				} catch (Exception e) {
+					
+				}
+				//test
 		//test
 		MainFrameBlank.MFBMain();
 		//test
@@ -95,13 +105,17 @@ public class Main
 
 class city {
 	public String name;
+	public char shortName;
 	public int stayTime;
+	public int cityId;
 	
 	public String toString() {
-		return name.concat("(" + Integer.toString(stayTime) + ")");
+		return (shortName + name.concat("(" + Integer.toString(stayTime) + ")"));
 	}
 	
-	city(String name) {
+	city(char shortName, String name, int cityId) {
+		this.shortName = shortName;
 		this.name = name;
+		this.cityId = cityId;
 	}
 }

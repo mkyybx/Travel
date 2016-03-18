@@ -86,14 +86,7 @@ public class Main
 		while (result.next()) 
 			MainFrameBlank.unselected.add(new city(result.getString(3).charAt(0),result.getString(2),Integer.parseInt(result.getString(1))));
 		//test
-				SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-				try {
-				Date d1 = sdf.parse("990:00:00");
-				System.out.println(d1.getTime());
-				} catch (Exception e) {
-					
-				}
-				//test
+		//test
 		//test
 		MainFrameBlank.MFBMain();
 		//test

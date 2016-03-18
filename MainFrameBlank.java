@@ -13,8 +13,8 @@ public class MainFrameBlank extends JFrame {
 	public static int startTime;//出发时间
 	public static int limitedTime;//限制的时间
 	public static char strategy;//旅行策略：1、时间最短2、金钱最少3、时间限定金钱最少
-	public static ArrayList unselected;//未选城市
-	public static ArrayList selected;//已选城市
+	public static ArrayList<city> unselected;//未选城市
+	public static ArrayList<city> selected;//已选城市
 	public static boolean isNumber(String s) {
 		for (int i = 0; i < s.length(); i++) {
 			if (!Character.isDigit(s.charAt(i)))
@@ -67,13 +67,13 @@ public class MainFrameBlank extends JFrame {
 					}
 					else if (e.getSource().equals(jbtu)) {
 						Object temp = selected.get(jlarrive.getSelectedIndex() - 1);
-						selected.set(jlarrive.getSelectedIndex() - 1, jlarrive.getSelectedValue());
-						selected.set(jlarrive.getSelectedIndex(), temp);
+						selected.set(jlarrive.getSelectedIndex() - 1, (city)jlarrive.getSelectedValue());
+						selected.set(jlarrive.getSelectedIndex(), (city)temp);
 					}
 					else if (e.getSource().equals(jbtd)) {
 						Object temp = selected.get(jlarrive.getSelectedIndex() + 1);
-						selected.set(jlarrive.getSelectedIndex() + 1, jlarrive.getSelectedValue());
-						selected.set(jlarrive.getSelectedIndex(), temp);
+						selected.set(jlarrive.getSelectedIndex() + 1, (city)jlarrive.getSelectedValue());
+						selected.set(jlarrive.getSelectedIndex(), (city)temp);
 					}
 					jldepart.setListData(unselected.toArray());
 					jlarrive.setListData(selected.toArray());

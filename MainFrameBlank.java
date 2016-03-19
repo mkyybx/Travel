@@ -10,8 +10,8 @@ import java.awt.event.ActionListener;
 public class MainFrameBlank extends JFrame {
 	public static JFrame frame;
 	public static boolean isOrdered;//是否按顺序旅游
-	public static int startTime;//出发时间
-	public static int limitedTime;//限制的时间
+	public static long startTime;//出发时间
+	public static long limitedTime;//限制的时间
 	public static char strategy;//旅行策略：1、时间最短2、金钱最少3、时间限定金钱最少
 	public static ArrayList<city> unselected;//未选城市
 	public static ArrayList<city> selected;//已选城市
@@ -55,15 +55,22 @@ public class MainFrameBlank extends JFrame {
 		JButton jbtu = new JButton("↑");
 		JButton jbtd = new JButton("↓");
 		ActionListener listListener = new ActionListener() {
+			city temp;
 			public void actionPerformed(ActionEvent e) {
 				try {
 					if(e.getSource().equals(jbtr)) {
-						selected.add((city)jldepart.getSelectedValue());
-						unselected.remove(jldepart.getSelectedIndex());
+						temp = (city)jldepart.getSelectedValue();
+						if (!temp.equals(null)) {
+							selected.add(temp);
+							unselected.remove(jldepart.getSelectedIndex());
+						}
 					}
 					else if(e.getSource().equals(jbtl)) {
-						unselected.add((city)jlarrive.getSelectedValue());
-						selected.remove(jlarrive.getSelectedIndex());
+						temp = (city)jlarrive.getSelectedValue();
+						if (!temp.equals(null)) {
+							unselected.add(temp);
+							selected.remove(jlarrive.getSelectedIndex());
+						}
 					}
 					else if (e.getSource().equals(jbtu)) {
 						Object temp = selected.get(jlarrive.getSelectedIndex() - 1);
@@ -185,7 +192,7 @@ public class MainFrameBlank extends JFrame {
 				else isOrdered = false;
 				//起始时间输入过滤
 				if (jtfstart.getText().equals("")) {
-					MainFrameBlank.startTime = Integer.parseInt(Main.renewTime().toString().substring(11, 13));
+					MainFrameBlank.startTime = (Integer.parseInt(Main.renewTime().toString().substring(11, 13)) + 1) % 24;
 					pass = true;
 				}
 				else if (jtfstart.getText().length()>2) {

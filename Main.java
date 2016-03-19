@@ -99,11 +99,11 @@ public class Main
 class city {
 	public String name;
 	public char shortName;
-	public int stayTime;
+	public long stayTime;
 	public int cityId;
 	
 	public String toString() {
-		return (shortName + name.concat("(" + Integer.toString(stayTime) + ")"));
+		return (shortName + name.concat("(" + Long.toString(stayTime) + ")"));
 	}
 	
 	city(char shortName, String name, int cityId) {

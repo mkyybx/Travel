@@ -3,6 +3,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+
+import javax.swing.JOptionPane;
 public class Calculate {
 	public static ArrayList<city> unselected;//未选城市
 	public static ArrayList<city> selected;//已选城市
@@ -13,11 +15,9 @@ public class Calculate {
 	public static long time(String s) throws Exception {
 		return sdf.parse(s).getTime() + 8 * 3600000;
 	}
-	//转换成SQL能识别的24小时时间
-	public static String sqlTime (long time) {
-		while (time > 24*3600000)
-			time -= 24*3600000;
-		return Long.toString(time / 3600000 + 8).concat(Long.toString(time % 3600000 / 60000).concat("00"));
+	//时间转文字
+	public static String stime(long time) {
+		return "第" + (time / (24 * 3600000) + 1) + "天" + time % (24 * 3600000) / 3600000 + "时" + (time % 3600000) / 60000 + "分";
 	}
 	//算两段时间差time1-time2
 	public static long division (long time1, long time2) {
@@ -25,22 +25,37 @@ public class Calculate {
 		time2 = time2 % (24*3600000);
 		if (time1 > time2)
 			return time1-time2;
-		else return 24*3600000 + time1 - time2;
+		else if (time1 < time2)
+			return 24*3600000 + time1 - time2;
+		else return 0;
 	}
 	public static void CMain() {
 		
 		//链接变量
 		unselected = MainFrameBlank.unselected;
 		selected = MainFrameBlank.selected;
+		
+		StringBuilder s = null;
+		
 		//判断isOrdered，暂时先按有顺序处理
 		try {
-		Dij(true);
+			if (MainFrameBlank.strategy == 1)
+				s = Dij(true);
+			else if (MainFrameBlank.strategy == 2)
+				s = Dij(false);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		//结果处理
+		int choice = JOptionPane.showConfirmDialog(null, s, "确认",JOptionPane.YES_NO_OPTION);
+		if (choice == 0) {
+			//下一步
+		}
 	}
 	
-	public static long Dij(boolean isTime) throws Exception{
+	public static StringBuilder Dij(boolean isTime) throws Exception{
+		StringBuilder s = new StringBuilder();
+		int totalPrice = 0;
 		int cityNum = unselected.size() + selected.size();//所有城市总数
 		long startTime = MainFrameBlank.startTime*3600000;
 		for (int i = 0; i < selected.size() - 1; i++) {//找i到i+1的最短路径
@@ -70,24 +85,43 @@ public class Calculate {
 				else r[idCity].departTime = r[idCity].minTime;
 				while (result.next()) {//对每个城市松弛
 					if (!r[result.getInt("idcity")].isShort) {
-						long temp = division(time(result.getString("departtime")),r[idCity].departTime) + r[idCity].departTime + division(time(result.getString("arrivetime")),time(result.getString("departtime")));
-						if (idCity == 13) {
-							System.out.println(r[idCity].minTime);
-							System.out.println(r[idCity].city.stayTime*3600000);
-							System.out.println(division(time(result.getString("departtime")),r[idCity].departTime));
+						if (isTime) {
+							long temp = division(time(result.getString("departtime")),r[idCity].departTime) + r[idCity].departTime + division(time(result.getString("arrivetime")),time(result.getString("departtime")));
+							if (r[result.getInt("idcity")].minTime > temp) {
+								r[result.getInt("idcity")].minPrice = result.getInt("price");
+								r[result.getInt("idcity")].minTime = temp;
+								r[result.getInt("idcity")].previousCity = idCity;
+								r[result.getInt("idcity")].previousDepartTime = temp - division(time(result.getString("arrivetime")),time(result.getString("departtime")));
+								r[result.getInt("idcity")].arriveNo = result.getString("number");
+							}
 						}
-						if (r[result.getInt("idcity")].minTime > temp) {
-							r[result.getInt("idcity")].minTime = temp;
-							r[result.getInt("idcity")].previousCity = idCity;
-							r[result.getInt("idcity")].arriveId = result.getInt("id");
+						else {
+							int tempMoney = result.getInt("price");
+							long temp = division(time(result.getString("departtime")),r[idCity].departTime) + r[idCity].departTime + division(time(result.getString("arrivetime")),time(result.getString("departtime")));
+							if (r[result.getInt("idcity")].minPrice > tempMoney) {
+								r[result.getInt("idcity")].minPrice = tempMoney;
+								r[result.getInt("idcity")].minTime = temp;
+								r[result.getInt("idcity")].previousCity = idCity;
+								r[result.getInt("idcity")].previousDepartTime = temp - division(time(result.getString("arrivetime")),time(result.getString("departtime")));
+								r[result.getInt("idcity")].arriveNo = result.getString("number");
+							}
+								
 						}
 					}
 				}
 				for (int j = 1; j <= cityNum; j++) {
 					if (!r[j].isShort) {
-						if (r[j].minTime < minTime) {
-							minTime = r[j].minTime;
-							nextCity = j;
+						if (!isTime) {
+							if (r[j].minTime < minTime) {
+								minTime = r[j].minTime;
+								nextCity = j;
+							}
+						}
+						else {
+							if (r[j].minTime < minTime) {
+								minTime = r[j].minTime;
+								nextCity = j;
+							}
 						}
 					}
 				}
@@ -95,9 +129,24 @@ public class Calculate {
 			
 				if (r[nextCity].city.name.equals(selected.get(i + 1).name)) {
 					int temp = nextCity;//selected.get(i).cityId;
-					while (r[temp].previousCity != 0) {
-						System.out.println(r[temp].city.name + ":第" + r[temp].minTime / 24 / 3600000 + "天" + r[temp].minTime % (24*3600000) / 3600000 + "时" + r[temp].minTime % 3600000 / 60000 + "分到达，停留" + r[temp].city.stayTime + "小时 " );
+					while (temp != 0) {
+						r[r[temp].previousCity].nextCity = temp;
+						r[r[temp].previousCity].departNo = r[temp].arriveNo;
+						//System.out.println(r[temp].city.name + ":第" + r[temp].minTime / 24 / 3600000 + "天" + r[temp].minTime % (24*3600000) / 3600000 + "时" + r[temp].minTime % 3600000 / 60000 + "分到达，停留" + r[temp].city.stayTime + "小时 " );
 						temp = r[temp].previousCity;
+					}
+					temp = selected.get(i).cityId;
+					while (temp != 0 && temp != selected.get(i + 1).cityId) {
+						int tempPrice = 0;
+						s.append(stime(r[r[temp].nextCity].previousDepartTime) + "乘坐" + r[temp].departNo + "从" + r[temp].city.name + "出发，");
+						while (r[r[temp].nextCity].departNo != null && r[r[temp].nextCity].departNo.equals(r[temp].departNo)) {
+							temp = r[temp].nextCity;
+							tempPrice += r[temp].minPrice;
+						}
+						temp = r[temp].nextCity;
+						tempPrice += r[temp].minPrice;
+						s.append(stime(r[temp].minTime) + "到达" + r[temp].city.name + "，票价" + tempPrice + "元" + "\n");
+						totalPrice += tempPrice;
 					}
 					startTime = r[nextCity].minTime;
 				
@@ -108,20 +157,35 @@ public class Calculate {
 				}
 			}
 		}
-		return 1;
+		s.append("\n总票价：" + totalPrice + "元");
+		return s;
 	}
 }
 
 class Result {
 	public long minTime = Long.MAX_VALUE;//最早到达时间
+	public int minPrice = Integer.MAX_VALUE;//最少金钱
 	public int previousCity = 0;
+	public int nextCity = 0;
+	public long previousDepartTime;
 	public long departTime;
-	public long arriveTime;
-	public int arriveId;
-	public int departId;
+	public String arriveNo;
+	public String departNo;
 	public boolean isShort = false;
 	public city city;
 	
+}
+
+class ReturnResult {
+	String route;
+	long time;
+	int money;
+	
+	ReturnResult(String route, long time, int money) {
+		this.route = route;
+		this.time = time;
+		this.money = money;
+	}
 }
 
 

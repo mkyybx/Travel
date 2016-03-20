@@ -10,6 +10,7 @@ import java.util.Date;
 
 public class Main 
 {
+	public static int[] MAPID = new int[1];
 	public static Statement st;//公共语句
 	public static ResultSet result;//公共语句
 	public static PrintWriter log;//日志写入对象

@@ -1,8 +1,14 @@
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.awt.PopupMenu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Timer;
 import java.util.jar.Attributes.Name;
 
 import javax.swing.JButton;
@@ -11,18 +17,19 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.xml.crypto.Data;
 
 
 public class Login extends JFrame
 {
-	private JTextField jtfname=new JTextField(20);
-	private JPasswordField jtfpwd=new JPasswordField(20);
+	private JTextField jtfname=new JTextField(15);
+	private JPasswordField jtfpwd=new JPasswordField(15);
+	static Login lg=new Login();
 	
 	public static void login()
 	{
-		Login lg=new Login();
-		lg.setTitle("登陆");
 		lg.pack();
 		lg.setLocationRelativeTo(null);
 		lg.setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -31,6 +38,10 @@ public class Login extends JFrame
 	
 	public Login()
 	{
+		setTitle("登陆");
+		
+		JPanel login=new JPanel(new GridLayout(0,1));
+		
 		JLabel jlbname=new JLabel("帐号：",JLabel.CENTER);
 		JLabel jlbpwd=new JLabel("密码：",JLabel.CENTER);
 		
@@ -41,15 +52,82 @@ public class Login extends JFrame
 		ptop.add(jtfpwd);
 		ptop.setLayout(new GridLayout(2,2));
 		
-		JButton cfm=new JButton("确定");
-		cfm.addActionListener(new ActionListener() 
+		JButton signin=new JButton("登陆");
+		signin.addActionListener(new ActionListener() 
 		{
-			
 			public void actionPerformed(ActionEvent e) 
 			{
 				Main.NAME=jtfname.getText();
-				Main.PASSWORD=jtfpwd.getText();
-				System.out.println(Main.NAME+" "+Main.PASSWORD);
+				Main.PASSWORD=new String(jtfpwd.getPassword());
+				try 
+				{
+					Main.result = Main.st.executeQuery("select * from users where user=\""+Main.NAME+"\";" );
+					if (!Main.result.next())
+						JOptionPane.showMessageDialog(null , "您还未注册！请先注册");
+					else
+					{
+						login.removeAll();
+						setTitle("查询状态框");
+						try 
+						{
+							Main.result = Main.st.executeQuery("select * from users where user=\""+Main.NAME+"\";" );
+							while (Main.result.next())
+							{
+								if(Main.result.getString(3) == null)
+								{
+									MainFrameBlank.MFBMain();
+								}
+								else
+								{
+									
+								}
+							}
+						} 
+						catch (SQLException ex) 
+						{
+							ex.printStackTrace();
+						}
+						Search ps=new Search();
+						login.add(ps);
+						//lg.add(login);
+						lg.pack();
+						lg.repaint();
+					}
+				} 
+				catch (SQLException exp) 
+				{
+					exp.printStackTrace();
+				}
+			}
+		});
+		JButton signup=new JButton("注册");
+		signup.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
+			{
+				Main.NAME=jtfname.getText();
+				Main.PASSWORD=new String(jtfpwd.getPassword());
+				//login.setVisible(false);
+				//System.out.println("insert into users values(\""+Main.NAME+"\",\""+Main.PASSWORD+"\",NULL);");
+				try 
+				{
+					Main.result = Main.st.executeQuery("select * from users where user=\""+Main.NAME+"\";" );
+					if(Main.result.next())
+					{
+						JOptionPane.showMessageDialog(null , "此帐号已被注册！请重新输入");
+						Main.NAME=jtfname.getText();
+						Main.PASSWORD=new String(jtfpwd.getPassword());
+					}
+					else
+					{
+						int r = Main.st.executeUpdate("insert into users values(\""+Main.NAME+"\",\""+Main.PASSWORD+"\",NULL);");
+						JOptionPane.showMessageDialog(null , "注册成功！请登陆");
+					}
+				} 
+				catch (SQLException e1) 
+				{
+					e1.printStackTrace();
+				}
 			}
 		});
 		JButton exit=new JButton("取消");
@@ -62,12 +140,108 @@ public class Login extends JFrame
 		});
 		
 		JPanel pbuttom=new JPanel();
-		pbuttom.add(cfm);
+		pbuttom.add(signin);
+		pbuttom.add(signup);
 		pbuttom.add(exit);
-		pbuttom.setLayout(new GridLayout(1,2));
 		
-		setLayout(new BorderLayout());
-		add(ptop,BorderLayout.NORTH);
-		add(pbuttom,BorderLayout.SOUTH);
+		login.add(ptop);
+		login.add(pbuttom);
+		
+		add(login);
+	}
+}
+
+class Search extends JPanel
+{
+	static JRadioButton Smap=new JRadioButton("是");
+	static JPanel P=new JPanel(new GridLayout(0,1));
+	
+	public Search()
+	{
+		JPanel line=new JPanel(new GridLayout(1,0));
+		JLabel l=new JLabel("路线为：",JLabel.RIGHT);
+		JLabel li=new JLabel("asfdaesfwefweffdwe",JLabel.LEFT);
+		line.add(l);
+		line.add(li);
+		
+		 JPanel Pmap=new JPanel(new GridLayout(1,0));
+		 JLabel Lmap=new JLabel("是否显示地图",JLabel.CENTER);
+		 Smap.addActionListener(new ActionListener()
+		 {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				Showmap.ShowmapMain();
+			}
+		 });
+		 
+		 JPanel Stime=new JPanel(new GridLayout(1,0));
+		 Date date=new Date();
+		 JLabel Ltime=new JLabel("实时时间：",JLabel.CENTER);
+		 SimpleDateFormat t = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		 JLabel Time=new JLabel(t.format(date)+"      ",JLabel.LEFT);
+		 javax.swing.Timer timer=new javax.swing.Timer(1000,new ActionListener() 
+		 {
+			public void actionPerformed(ActionEvent e) 
+			{
+				Date date=new Date();
+				Time.setText(t.format(date)+"      ");
+//				System.out.println(date.toString());
+				Login.lg.pack();
+				repaint();
+			}
+		 });
+		 timer.start();
+		 Stime.add(Ltime);
+		 Stime.add(Time);
+		 
+		 JPanel Pstate=new JPanel();
+		 JButton state=new JButton("查询状态");
+		 JPanel s=new JPanel();
+		 JLabel st=new JLabel("您的状态为：");
+		 JLabel sta=new JLabel();
+		 state.addActionListener(new ActionListener() 
+		 {
+			public void actionPerformed(ActionEvent e) 
+			{
+				sta.setText("saasfdsafsafa");
+				s.add(st);
+				s.add(sta);
+				P.add(s);
+				Login.lg.pack();
+				repaint();
+			}
+		 });
+		 JButton e=new JButton("取消");
+		 e.addActionListener(new ActionListener() 
+		 {
+			public void actionPerformed(ActionEvent e) 
+			{
+				P.remove(s);
+				Login.lg.pack();
+				repaint();
+			}
+		 });
+		 Pstate.add(state);
+		 Pstate.add(e);
+		 
+		 JPanel change=new JPanel();
+		 JButton c=new JButton("更改行程");
+		 c.addActionListener(new ActionListener() 
+		 {
+			public void actionPerformed(ActionEvent e) 
+			{
+				MainFrameBlank.MFBMain();
+			}
+		 });
+		 change.add(c);
+		 
+		 Pmap.add(Lmap);
+		 Pmap.add(Smap);
+		 P.add(line);
+		 P.add(Pmap);
+		 P.add(Stime);
+		 P.add(change);
+		 P.add(Pstate);
+		 add(P);
 	}
 }

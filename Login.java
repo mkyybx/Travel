@@ -5,6 +5,8 @@ import java.awt.PopupMenu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -59,13 +61,43 @@ public class Login extends JFrame
 			{
 				Main.NAME=jtfname.getText();//获得帐号密码
 				Main.PASSWORD=new String(jtfpwd.getPassword());
+				if(Main.NAME.equals("")||Main.PASSWORD.equals(""))
+					JOptionPane.showMessageDialog(null , "帐号密码不能为空！");
+				else 
+				{
+				
+				MessageDigest md;
+				StringBuffer buf = new StringBuffer("");
+				try 
+				{
+					md = MessageDigest.getInstance("MD5");
+					md.update(Main.PASSWORD.getBytes());
+					byte [] b=md.digest();
+					int i;
+					for (int offset = 0; offset < b.length; offset++) 
+					{
+						i = b[offset];
+						if(i<0) 
+							i+= 256;
+						if(i<16)
+							buf.append("0");
+						buf.append(Integer.toHexString(i));
+					} 
+				} 
+				catch (NoSuchAlgorithmException e1) 
+				{
+					e1.printStackTrace();
+				}
+				String s=buf.toString();
+				
 				try 
 				{
 					Main.result = Main.st.executeQuery("select * from users where user=\""+Main.NAME+"\";" );
-					if (!Main.result.next())//验证时候注册
+					if (!Main.result.next())//验证是否注册
 						JOptionPane.showMessageDialog(null , "您还未注册！请先注册");
-					else if (!Main.PASSWORD.equals(Main.result.getString(2)))//验证密码是否正确
+					else if (!s.equals(Main.result.getString(2)))//验证密码是否正确
 					{
+						System.out.println(buf);
 						System.out.println(Main.result.getString(2));
 						JOptionPane.showMessageDialog(null , "密码错误！请重新输入");
 					}
@@ -81,6 +113,7 @@ public class Login extends JFrame
 								if(Main.result.getString(3) == null)//无行程就调用MainFrameBlank.MFBMain()函数
 								{
 									MainFrameBlank.MFBMain();
+									Login.lg.setVisible(false);
 								}
 								else
 								{
@@ -104,6 +137,7 @@ public class Login extends JFrame
 					exp.printStackTrace();
 				}
 			}
+			}
 		});
 		JButton signup=new JButton("注册");
 		signup.addActionListener(new ActionListener() //注册按钮添加监视器
@@ -112,6 +146,11 @@ public class Login extends JFrame
 			{
 				Main.NAME=jtfname.getText();
 				Main.PASSWORD=new String(jtfpwd.getPassword());
+				
+				if(Main.NAME.equals("")||Main.PASSWORD.equals(""))
+					JOptionPane.showMessageDialog(null , "帐号密码不能为空！");
+				else 
+				{
 				//login.setVisible(false);
 				//System.out.println("insert into users values(\""+Main.NAME+"\",\""+Main.PASSWORD+"\",NULL);");
 				try 
@@ -125,13 +164,38 @@ public class Login extends JFrame
 					}
 					else//可注册的帐号密码
 					{
-						int r = Main.st.executeUpdate("insert into users values(\""+Main.NAME+"\",\""+Main.PASSWORD+"\",NULL);");
-						JOptionPane.showMessageDialog(null , "注册成功！请登陆");
+						MessageDigest md;
+						try 
+						{
+							md = MessageDigest.getInstance("MD5");
+							md.update(Main.PASSWORD.getBytes());
+							byte[] b=md.digest();
+							
+							int i;
+							StringBuffer buf = new StringBuffer("");
+							for (int offset = 0; offset < b.length; offset++) 
+							{
+								i = b[offset];
+								if(i<0) 
+									i+= 256;
+								if(i<16)
+									buf.append("0");
+								buf.append(Integer.toHexString(i));
+							} 
+							
+							int r = Main.st.executeUpdate("insert into users values(\""+Main.NAME+"\",\""+buf+"\",NULL);");
+							JOptionPane.showMessageDialog(null , "注册成功！请登陆");
+						} 
+						catch (NoSuchAlgorithmException e1) 
+						{
+							e1.printStackTrace();
+						}
 					}
 				} 
 				catch (SQLException e1) 
 				{
 					e1.printStackTrace();
+				}
 				}
 			}
 		});
@@ -175,7 +239,10 @@ class Search extends JPanel//查询状态框的类
 			public void actionPerformed(ActionEvent arg0) 
 			{
 				if(!Showmap.smap.isShowing())//按下时调用Showmap.ShowmapMain()显示地图
+				{
 					Showmap.ShowmapMain();
+					Login.lg.setVisible(false);
+				}
 			}
 		 });
 		 
@@ -223,7 +290,9 @@ class Search extends JPanel//查询状态框的类
 			public void actionPerformed(ActionEvent e) 
 			{
 				if(!MainFrameBlank.frame.isShowing())//调用MainFrameBlank.MFBMain()更改行程
-					MainFrameBlank.MFBMain();
+				{	MainFrameBlank.MFBMain();
+					Login.lg.setVisible(false);
+				}
 			}
 		 });
 		 change.add(c);

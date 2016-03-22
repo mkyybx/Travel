@@ -84,9 +84,12 @@ public class Main
 		result = st.executeQuery("select * from city order by cityabbr asc");
 		MainFrameBlank.unselected = new ArrayList();
 		MainFrameBlank.selected = new ArrayList();
+		MainFrameBlank.all = new ArrayList();
 		while (result.next()) 
 			MainFrameBlank.unselected.add(new city(result.getString(3).charAt(0),result.getString(2),Integer.parseInt(result.getString(1))));
+		MainFrameBlank.all.addAll(MainFrameBlank.unselected);
 		//test
+		
 		//test
 		//test
 		MainFrameBlank.MFBMain();

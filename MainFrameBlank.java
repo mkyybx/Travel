@@ -15,6 +15,8 @@ public class MainFrameBlank extends JFrame {
 	public static char strategy;//旅行策略：1、时间最短2、金钱最少3、时间限定金钱最少
 	public static ArrayList<city> unselected;//未选城市
 	public static ArrayList<city> selected;//已选城市
+	public static ArrayList<city> all;//全部城市
+	public static city finalCity;
 	public static boolean isNumber(String s) {
 		for (int i = 0; i < s.length(); i++) {
 			if (!Character.isDigit(s.charAt(i)))
@@ -31,6 +33,7 @@ public class MainFrameBlank extends JFrame {
 		frame.setVisible(true);
 	}
 	MainFrameBlank() {
+		
 		//setLayout(new GridLayout(0,1));
 		setLayout(new BorderLayout());
 		
@@ -39,10 +42,21 @@ public class MainFrameBlank extends JFrame {
 		JPanel putop = new JPanel(new GridLayout(0,3));
 		JPanel pubuttom = new JPanel(new GridLayout(0,3));
 		
+		
+		
+		//！！！！！！！！！！！！！！！！！！！！！！！！新加的
+				JLabel jlfinal = new JLabel("到达城市");
+				JComboBox jcbfinal = new JComboBox(all.toArray());
+				pu.add(jcbfinal,BorderLayout.WEST);
+				//结束
+				
+				
+				
+		
 		//pu的东东
 		JLabel l1 = new JLabel("已选城市：",JLabel.CENTER);
 		JLabel l2 = new JLabel("可选城市：",JLabel.CENTER);
-		JRadioButton jrbisordered=new JRadioButton("是否按顺序旅游");
+		JRadioButton jrbisordered=new JRadioButton("是否按顺序旅游",true);
 		
 		JList jldepart = new JList(unselected.toArray());
 		JList jlarrive = new JList(selected.toArray());
@@ -232,12 +246,19 @@ public class MainFrameBlank extends JFrame {
 					}
 				}
 				//列表过滤
-				if (selected.size() <= 1) {
-					Main.showMessage("旅行城市至少需要两个(包括一个出发城市)");
+				if (selected.size() < 1) {
+					Main.showMessage("至少需要有一个出发城市");
 					pass = false;
 				}
-				if (pass)
+				else if (selected.get(selected.size() - 1).equals(jcbfinal.getSelectedItem())) {
+					Main.showMessage("不可以在一个城市绕圈");
+					pass = false;
+				}
+				
+				if (pass) {
+					finalCity = (city)jcbfinal.getSelectedItem();
 					Calculate.CMain();
+				}
 			}
 		});
 		jbtcancel.addActionListener(new ActionListener() {
@@ -264,6 +285,7 @@ public class MainFrameBlank extends JFrame {
 		
 		this.add(test1,BorderLayout.CENTER);
 		this.add(test2,BorderLayout.SOUTH);
+		
 		
 //		this.add(pu);
 //		this.add(pm);

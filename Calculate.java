@@ -34,6 +34,23 @@ public class Calculate {
 			return 24*3600000 + time1 - time2;
 		else return 0;
 	}
+	//排列
+	static void arrange(ArrayList<city> a, int begin) {
+		if (a.size() - begin == 2) 
+			Dij(a,)
+		else {
+			for (int i = begin; i < a.length - 1; i++) {
+				int temp = a[i];
+				a[i] = a[begin];
+				a[begin] = temp;
+				arrange(a, begin + 1);
+				temp = a[i];
+				a[i] = a[begin];
+				a[begin] = temp;
+			}
+		}
+	}
+	
 	public static void CMain() {
 		
 		//链接变量
@@ -41,22 +58,22 @@ public class Calculate {
 		selected = MainFrameBlank.selected;
 		StringBuilder s = null;
 		try {
-			
+			selected.add(MainFrameBlank.finalCity);
 			if (MainFrameBlank.isOrdered) {
-				selected.add(MainFrameBlank.finalCity);
+				
 				if (MainFrameBlank.strategy == 1)
-					s = Dij(true, true);
+					s = Dij(selected, true, true);
 				else if (MainFrameBlank.strategy == 2)
-					s = Dij(false, true);
-				selected.remove(selected.size() - 1);
+					s = Dij(selected, false, true);
+				
 			}
-			
 			else {
 				minValue = Long.MAX_VALUE;
 				//排列，递归调用
 				ArrayList<city> copySelected = new ArrayList<city>();
 				
 			}
+			selected.remove(selected.size() - 1);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -67,7 +84,7 @@ public class Calculate {
 		}
 	}
 	
-	public static StringBuilder Dij(boolean isTime, boolean isOrdered) throws Exception{
+	public static StringBuilder Dij(ArrayList<city> selected, boolean isTime, boolean isOrdered) throws Exception{
 		StringBuilder s = new StringBuilder();
 		int totalPrice = 0;//最后用于计算总价
 		int cityNum = MainFrameBlank.all.size();//所有城市总数

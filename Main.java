@@ -89,7 +89,8 @@ public class Main
 			MainFrameBlank.unselected.add(new city(result.getString(3).charAt(0),result.getString(2),Integer.parseInt(result.getString(1))));
 		MainFrameBlank.all.addAll(MainFrameBlank.unselected);
 		//test
-		
+		int []a = {1,2,3,4,5,6};
+		arrange(a, 1);
 		//test
 		//test
 		MainFrameBlank.MFBMain();

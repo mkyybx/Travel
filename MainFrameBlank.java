@@ -44,14 +44,16 @@ public class MainFrameBlank extends JFrame {
 		
 		
 		
-		//！！！！！！！！！！！！！！！！！！！！！！！！新加的
-				JLabel jlfinal = new JLabel("到达城市");
-				JComboBox jcbfinal = new JComboBox(all.toArray());
-				pu.add(jcbfinal,BorderLayout.WEST);
-				//结束
-				
-				
-				
+		JPanel puu=new JPanel(new GridLayout(2,0));//修改的
+		JPanel pub=new JPanel();
+		JLabel jlfinal = new JLabel("出发城市",JLabel.RIGHT);
+		pub.add(jlfinal);
+		JComboBox jcbfinal = new JComboBox(all.toArray());
+		pub.add(jcbfinal);
+		puu.add(pub);
+		puu.add(putop);
+		
+		
 		
 		//pu的东东
 		JLabel l1 = new JLabel("已选城市：",JLabel.CENTER);
@@ -271,7 +273,7 @@ public class MainFrameBlank extends JFrame {
 		//结束
 		
 		JPanel test1=new JPanel(new BorderLayout());
-		pu.add(putop,BorderLayout.NORTH);
+		pu.add(puu,BorderLayout.NORTH);//修改新
 		pu.add(pubuttom,BorderLayout.CENTER);
 		test1.add(pu,BorderLayout.CENTER);
 		test1.add(pm,BorderLayout.SOUTH);
@@ -297,4 +299,3 @@ public class MainFrameBlank extends JFrame {
 //		this.add(jlprompt);//新加的，你排一下版
 	}
 }
-

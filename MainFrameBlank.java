@@ -46,7 +46,7 @@ public class MainFrameBlank extends JFrame {
 		
 		JPanel puu=new JPanel(new GridLayout(2,0));//修改的
 		JPanel pub=new JPanel();
-		JLabel jlfinal = new JLabel("出发城市",JLabel.RIGHT);
+		JLabel jlfinal = new JLabel("到达城市",JLabel.RIGHT);
 		pub.add(jlfinal);
 		JComboBox jcbfinal = new JComboBox(all.toArray());
 		pub.add(jcbfinal);

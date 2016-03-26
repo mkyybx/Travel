@@ -17,6 +17,7 @@ public class Main
 	public static Date dateinit = new java.util.Date();//启动时间
 	public static String NAME;//登陆名
 	public static String PASSWORD;//登陆密码
+	public static ResultSet[] buffer;//数据缓存，出发城市，到达城市，出发时间，
 	
 	//重置为当前时间的函数
 	public static Date renewTime() 
@@ -52,6 +53,7 @@ public class Main
 	
 	public static void main(String args[]) throws Exception 
 	{
+		
 		//记录日志
 		try 
 		{
@@ -88,9 +90,21 @@ public class Main
 		while (result.next()) 
 			MainFrameBlank.unselected.add(new city(result.getString(3).charAt(0),result.getString(2),Integer.parseInt(result.getString(1))));
 		MainFrameBlank.all.addAll(MainFrameBlank.unselected);
+		
+		//初始化buffer
+		result = st.executeQuery("select * from city order by idcity asc");
+		Connection[] tempconnection = new Connection[MainFrameBlank.all.size() + 1]; 
+		Statement[] tempst = new Statement[MainFrameBlank.all.size() + 1];
+		buffer = new ResultSet[MainFrameBlank.all.size() + 1];
+		while(result.next()) {
+			System.out.println(result.getInt("idCity"));
+			tempconnection[result.getInt("idCity")] = DriverManager.getConnection("jdbc:mysql://localhost/travel","root","huang");
+			tempst[result.getInt("idCity")] = tempconnection[result.getInt("idCity")].createStatement();
+			buffer[result.getInt("idCity")]=tempst[result.getInt("idCity")].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + result.getString("cityname") + "'");
+		}
+		
 		//test
 		int []a = {1,2,3,4,5,6};
-		arrange(a, 1);
 		//test
 		//test
 		MainFrameBlank.MFBMain();

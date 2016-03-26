@@ -3,6 +3,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 import javax.swing.JOptionPane;
 public class Calculate {
@@ -11,21 +14,29 @@ public class Calculate {
 	public static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");//创建sdf
 	public static Statement st = Main.st;//公共语句
 	public static ResultSet result = Main.result;//公共语句
+	
 	public static long minValue = Long.MAX_VALUE;//用于剪枝，记录排列时最优数值
+	public static Semaphore signalminValue = new Semaphore(1);
+	public static StringBuilder s;//用于记录提示语
+	public static StringBuilder sqls;//用于写入数据库，数据格式：时间,城市/车次以#结束
+	
+	//多线程部分
+	public static ExecutorService executor = Executors.newFixedThreadPool(4);//线程池
+	
 	//转成sql能识别的时间格式
-	public static String sqltime(long time) {
+	public static synchronized String sqltime(long time) {
 		return Long.toString(((time % (24 * 3600000)) / 3600000 + 8)).concat(Long.toString(((time % 3600000) / 60000))).concat("00");
 	}
 	//字符转换时间
-	public static long time(String s) throws Exception {
+	public static synchronized long time(String s) throws Exception {
 		return sdf.parse(s).getTime() + 8 * 3600000;
 	}
 	//时间转文字
-	public static String stime(long time) {
+	public static synchronized String stime(long time) {
 		return "第" + (time / (24 * 3600000) + 1) + "天" + time % (24 * 3600000) / 3600000 + "时" + (time % 3600000) / 60000 + "分";
 	}
 	//算两段时间差time1-time2
-	public static long division (long time1, long time2) {
+	public static synchronized long division (long time1, long time2) {
 		time1 = time1 % (24*3600000);
 		time2 = time2 % (24*3600000);
 		if (time1 > time2)
@@ -35,43 +46,45 @@ public class Calculate {
 		else return 0;
 	}
 	//排列
-	static void arrange(ArrayList<city> a, int begin) {
-		if (a.size() - begin == 2) 
-			Dij(a,)
+	static void arrange(ArrayList<city> a, int begin) throws Exception{
+		if (a.size() - begin == 2) {
+			ArrayList<city> temp = new ArrayList<city>();
+			temp.addAll(a);
+			executor.execute(new Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false));
+		}
 		else {
-			for (int i = begin; i < a.length - 1; i++) {
-				int temp = a[i];
-				a[i] = a[begin];
-				a[begin] = temp;
+			for (int i = begin; i < a.size() - 1; i++) {
+				city temp = a.get(i);
+				a.set(i, a.get(begin));
+				a.set(begin, temp);
 				arrange(a, begin + 1);
-				temp = a[i];
-				a[i] = a[begin];
-				a[begin] = temp;
+				temp = a.get(i);
+				a.set(i, a.get(begin));
+				a.set(begin, temp);
 			}
 		}
 	}
 	
 	public static void CMain() {
-		
 		//链接变量
 		unselected = MainFrameBlank.unselected;
 		selected = MainFrameBlank.selected;
-		StringBuilder s = null;
 		try {
 			selected.add(MainFrameBlank.finalCity);
 			if (MainFrameBlank.isOrdered) {
 				
 				if (MainFrameBlank.strategy == 1)
-					s = Dij(selected, true, true);
+					Dij(selected, true, true);
 				else if (MainFrameBlank.strategy == 2)
-					s = Dij(selected, false, true);
+					Dij(selected, false, true);
 				
 			}
 			else {
 				minValue = Long.MAX_VALUE;
 				//排列，递归调用
 				ArrayList<city> copySelected = new ArrayList<city>();
-				
+				copySelected.addAll(selected);
+				arrange(copySelected,1);
 			}
 			selected.remove(selected.size() - 1);
 		} catch (Exception ex) {
@@ -80,19 +93,23 @@ public class Calculate {
 		//结果处理
 		int choice = JOptionPane.showConfirmDialog(null, s, "确认",JOptionPane.YES_NO_OPTION);
 		if (choice == 0) {
+			//向数据库写入真实出发时间
 			//下一步
 		}
 	}
 	
-	public static StringBuilder Dij(ArrayList<city> selected, boolean isTime, boolean isOrdered) throws Exception{
+	public static void Dij(ArrayList<city> selected, boolean isTime, boolean isOrdered) throws Exception{
 		StringBuilder s = new StringBuilder();
+		StringBuilder sqls = new StringBuilder();
 		int totalPrice = 0;//最后用于计算总价
 		int cityNum = MainFrameBlank.all.size();//所有城市总数
 		long startTime = MainFrameBlank.startTime*3600000;
 		boolean canTerminate = false;//用于排列运算时剪枝，当算到某一节点时已经比最小值大了，直接pass
 		for (int i = 0; i < selected.size() - 1; i++) {//找i到i+1的最短路径
-			if (canTerminate)
+			if (canTerminate) {
+				signalminValue.release();
 				break;
+			}
 			Result[] r = new Result[cityNum + 1];
 			for (int j = 0; j <= cityNum; j++) {
 				r[j] = new Result();
@@ -100,7 +117,7 @@ public class Calculate {
 			for (int j = 0; j < cityNum; j++) {
 				r[MainFrameBlank.all.get(j).cityId].city = MainFrameBlank.all.get(j);
 			}
-			
+
 			//初始化出发城市
 			r[selected.get(i).cityId].previousCity=0;
 			r[selected.get(i).cityId].minTime=startTime;
@@ -115,9 +132,8 @@ public class Calculate {
 				if (selected.get(i).cityId == idCity)
 					r[idCity].departTime = r[idCity].minTime + r[idCity].city.stayTime*3600000;
 				else r[idCity].departTime = r[idCity].minTime;
-				if (!isTime)
-					result = st.executeQuery("select * from transport, city where arrivecity = cityname and departcity = '" + r[idCity].city.name + "' order by price");
-				else result = st.executeQuery("SELECT * FROM transport, city where arrivecity = cityname and departcity = '" + r[idCity].city.name + "' and departtime >= " + sqltime(r[idCity].departTime) + " union all (SELECT * FROM transport, city where arrivecity = cityname and departcity = '" + r[idCity].city.name + "' and departtime < " + sqltime(r[idCity].departTime) + " order by departtime)");
+				result = Main.buffer[idCity];//st[(count++) % 4].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + r[idCity].city.name + "'");
+				
 				while (result.next()) {//对每个城市松弛
 					if (!r[result.getInt("idcity")].isShort) {
 						if (isTime) {
@@ -144,6 +160,7 @@ public class Calculate {
 						}
 					}
 				}
+				result.first();
 				for (int j = 1; j <= cityNum; j++) {
 					if (!r[j].isShort) {
 						if (!isTime) {
@@ -162,6 +179,7 @@ public class Calculate {
 				}
 				r[nextCity].isShort = true;
 				if (!isOrdered) {
+					signalminValue.acquire();
 					if (isTime) {
 						if (r[nextCity].minTime > minValue) {
 							canTerminate = true;
@@ -174,6 +192,7 @@ public class Calculate {
 							break;
 						}
 					}
+					signalminValue.release();
 				}
 				
 				if (r[nextCity].city.name.equals(selected.get(i + 1).name)) {
@@ -189,6 +208,7 @@ public class Calculate {
 					while (temp != 0 && temp != selected.get(i + 1).cityId) {
 						int tempPrice = 0;
 						s.append(stime(r[r[temp].nextCity].previousDepartTime) + "乘坐" + r[temp].departNo + "从" + r[temp].city.name + "出发，");
+						sqls.append(r[temp].minTime + "," + r[temp].city.name + "," + r[r[temp].nextCity].previousDepartTime + "," + r[temp].departNo + ",");
 						while (r[r[temp].nextCity].departNo != null && r[r[temp].nextCity].departNo.equals(r[temp].departNo)) {
 							temp = r[temp].nextCity;
 							tempPrice += r[temp].minPrice;
@@ -204,16 +224,22 @@ public class Calculate {
 				}
 				else {
 					idCity = nextCity;
+					
 				}
 			}
+			
 		}
-		s.append("总票价：" + totalPrice + "元");
-		if (!isOrdered && !isTime)
-			minValue = totalPrice;
-		else if (!isOrdered && isTime)
-			minValue = startTime;
-		Main.showMessage(stime(startTime));
-		return s;
+		if (!canTerminate) {
+			s.append("总票价：" + totalPrice + "元");
+			signalminValue.acquire();
+			if (isOrdered || (!isOrdered && ((!isTime && totalPrice < minValue) || (isTime && startTime <minValue)))) {
+				minValue = isTime ? startTime : totalPrice;
+				Calculate.s = s;
+				Calculate.sqls = sqls;
+			}
+			signalminValue.release();
+		}
+		
 	}
 }
 
@@ -240,6 +266,24 @@ class ReturnResult {
 		this.route = route;
 		this.time = time;
 		this.money = money;
+	}
+}
+
+class Dij implements Runnable {
+	ArrayList<city> selected;
+	boolean isTime;
+	boolean isOrdered;
+	public void run(){
+		try {
+		Calculate.Dij(selected, isTime, isOrdered);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+	Dij(ArrayList<city> selected, boolean isTime, boolean isOrdered) {
+		this.selected = selected;
+		this.isTime = isTime;
+		this.isOrdered = isOrdered;
 	}
 }
 

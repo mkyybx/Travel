@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.JOptionPane;
 public class Calculate {
@@ -17,22 +17,19 @@ public class Calculate {
 	public static ResultSet result = Main.result;//公共语句
 	public static int cityNum = MainFrameBlank.all.size();//城市个数
 	
-	public static long minValue = Long.MAX_VALUE;//用于剪枝，记录排列时最优数值
-	public static Semaphore signalminValue = new Semaphore(1);
-	public static Semaphore[] signalresult = new Semaphore[cityNum + 1];
+	public static long minValue;//用于剪枝，记录排列时最优数值
+	public static Lock signalminValue;
+	public static Lock[] signalresult = new Lock[cityNum + 1];
 	public static StringBuilder s;//用于记录提示语
 	public static StringBuilder sqls;//用于写入数据库，数据格式：时间,城市/车次以#结束
 	
-	//test
-	public static long time;
-	//test
 	
 	//多线程部分
 	public static ExecutorService executor = Executors.newFixedThreadPool(4);//线程池
 	
-	//转成sql能识别的时间格式
+	//转成sql能识别的时间格式,包含了日期信息
 	public static synchronized String sqltime(long time) {
-		return Long.toString(((time % (24 * 3600000)) / 3600000 + 8)).concat(Long.toString(((time % 3600000) / 60000))).concat("00");
+		return Long.toString(time / 3600000).concat(Long.toString(((time % 3600000) / 60000 / 10)));
 	}
 	//字符转换时间
 	public static synchronized long time(String s) throws Exception {
@@ -57,8 +54,8 @@ public class Calculate {
 		if (a.size() - begin == 2) {
 			ArrayList<city> temp = new ArrayList<city>();
 			temp.addAll(a);
-			//executor.execute(new Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false));
-			Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false);
+			executor.execute(new Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false));
+			//Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false);
 		}
 		else {
 			for (int i = begin; i < a.size() - 1; i++) {
@@ -74,42 +71,52 @@ public class Calculate {
 	}
 	
 	public static void CMain() {
+		try {
 		//链接变量
 		unselected = MainFrameBlank.unselected;
 		selected = MainFrameBlank.selected;
+		//初始化
+		minValue = Long.MAX_VALUE;//用于剪枝，记录排列时最优数值
+		signalminValue = new ReentrantLock();
+		s = null;//用于记录提示语
+		sqls = null;//用于写入数据库，数据格式：时间,城市/车次以#结束
 		for (int i = 1; i <= cityNum; i++)
-			signalresult[i] = new Semaphore(1);
-		try {
-			selected.add(MainFrameBlank.finalCity);
-			if (MainFrameBlank.isOrdered) {
-				
-				if (MainFrameBlank.strategy == 1)
-					Dij(selected, true, true);
-				else if (MainFrameBlank.strategy == 2)
-					Dij(selected, false, true);
-				
-			}
-			else {
-				minValue = Long.MAX_VALUE;
-				//排列，递归调用
-				ArrayList<city> copySelected = new ArrayList<city>();
-				copySelected.addAll(selected);
-				arrange(copySelected,1);
-			}
-			selected.remove(selected.size() - 1);
-		} catch (Exception ex) {
-			ex.printStackTrace();
+			signalresult[i] = new ReentrantLock();
+		selected.add(MainFrameBlank.finalCity);
+		if (MainFrameBlank.isOrdered) {			
+			if (MainFrameBlank.strategy == 1)
+				Dij(selected, true, true);
+			else if (MainFrameBlank.strategy == 2)
+				Dij(selected, false, true);				
 		}
-		System.out.println(time);
+		else {
+			minValue = Long.MAX_VALUE;
+			//排列，递归调用
+			ArrayList<city> copySelected = new ArrayList<city>();
+			copySelected.addAll(selected);
+			arrange(copySelected,1);
+			executor.awaitTermination(15, TimeUnit.SECONDS);		
+		}
+		selected.remove(selected.size() - 1);
 		//结果处理
+		
 		int choice = JOptionPane.showConfirmDialog(null, s, "确认",JOptionPane.YES_NO_OPTION);
 		if (choice == 0) {
-			//向数据库写入真实出发时间
+			//向数据库写入真实出发时间，行程数据
+			st.executeUpdate("update users set state = 1, starttime = " + System.currentTimeMillis() + ", route = '" + sqls + "', prompt = '" + s + "' where user = '" + Main.NAME + "'");
+			MainFrameBlank.frame.dispose();
+			Thread.sleep(500);
+			Login.lg.setVisible(true);
+			Main.windowLock.unlock();
 			//下一步
+		}
+		} catch(Exception ex) {
+			ex.printStackTrace();
 		}
 	}
 	
 	public static void Dij(ArrayList<city> selected, boolean isTime, boolean isOrdered) throws Exception{
+		
 		StringBuilder s = new StringBuilder();
 		StringBuilder sqls = new StringBuilder();
 		int totalPrice = 0;//最后用于计算总价
@@ -118,7 +125,7 @@ public class Calculate {
 		boolean canTerminate = false;//用于排列运算时剪枝，当算到某一节点时已经比最小值大了，直接pass
 		for (int i = 0; i < selected.size() - 1; i++) {//找i到i+1的最短路径
 			if (canTerminate) {
-				signalminValue.release();
+				signalminValue.unlock();
 				break;
 			}
 			Result[] r = new Result[cityNum + 1];
@@ -143,10 +150,14 @@ public class Calculate {
 					r[idCity].departTime = r[idCity].minTime + r[idCity].city.stayTime*3600000;
 				else r[idCity].departTime = r[idCity].minTime;
 				
-				signalresult[idCity].acquire();
-				result = Main.buffer[idCity];//st[(count++) % 4].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + r[idCity].city.name + "'");
+				signalresult[idCity].lock();
 				
-				while (result.next()) {//对每个城市松弛
+				
+				result = Main.buffer[idCity];//st[(count++) % 4].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + r[idCity].city.name + "'");
+				result.first();
+				
+				do {//对每个城市松弛
+					
 					if (!r[result.getInt("idcity")].isShort) {
 						if (isTime) {
 							long temp = division(time(result.getString("departtime")),r[idCity].departTime) + r[idCity].departTime + division(time(result.getString("arrivetime")),time(result.getString("departtime")));
@@ -171,9 +182,9 @@ public class Calculate {
 								
 						}
 					}
-				}
-				result.first();
-				signalresult[idCity].release();
+				} while (result.next());
+				
+				signalresult[idCity].unlock();
 				
 				for (int j = 1; j <= cityNum; j++) {
 					if (!r[j].isShort) {
@@ -193,7 +204,8 @@ public class Calculate {
 				}
 				r[nextCity].isShort = true;
 				if (!isOrdered) {
-					signalminValue.acquire();
+					
+					signalminValue.lock();
 					if (isTime) {
 						if (r[nextCity].minTime > minValue) {
 							canTerminate = true;
@@ -206,7 +218,7 @@ public class Calculate {
 							break;
 						}
 					}
-					signalminValue.release();
+					signalminValue.unlock();
 				}
 				
 				if (r[nextCity].city.name.equals(selected.get(i + 1).name)) {
@@ -222,7 +234,7 @@ public class Calculate {
 					while (temp != 0 && temp != selected.get(i + 1).cityId) {
 						int tempPrice = 0;
 						s.append(stime(r[r[temp].nextCity].previousDepartTime) + "乘坐" + r[temp].departNo + "从" + r[temp].city.name + "出发，");
-						sqls.append(r[temp].minTime + "," + r[temp].city.name + "," + r[r[temp].nextCity].previousDepartTime + "," + r[temp].departNo + ",");
+						sqls.append(sqltime(r[temp].minTime) + "," + temp + "," + sqltime(r[r[temp].nextCity].previousDepartTime) + "," + r[temp].departNo + ",");
 						while (r[r[temp].nextCity].departNo != null && r[r[temp].nextCity].departNo.equals(r[temp].departNo)) {
 							temp = r[temp].nextCity;
 							tempPrice += r[temp].minPrice;
@@ -234,6 +246,8 @@ public class Calculate {
 					}
 					startTime = r[nextCity].minTime;
 					s.append("\n");
+					if (i + 1 == selected.size() - 1)
+						sqls.append(sqltime(r[selected.get(i + 1).cityId].minTime) + "," + selected.get(i + 1).cityId + "#");
 					break;
 				}
 				else {
@@ -244,16 +258,18 @@ public class Calculate {
 				
 			}
 			
+			
 		}
 		if (!canTerminate) {
 			s.append("总票价：" + totalPrice + "元");
-			signalminValue.acquire();
+			signalminValue.lock();
 			if (isOrdered || (!isOrdered && ((!isTime && totalPrice < minValue) || (isTime && startTime <minValue)))) {
 				minValue = isTime ? startTime : totalPrice;
 				Calculate.s = s;
 				Calculate.sqls = sqls;
 			}
-			signalminValue.release();
+			signalminValue.unlock();
+			
 		}
 		
 	}
@@ -292,7 +308,9 @@ class Dij implements Runnable {
 	public void run(){
 		try {
 		Calculate.Dij(selected, isTime, isOrdered);
+		System.out.println("子线程" + Thread.currentThread() + "执行完毕");
 		} catch (Exception ex) {
+			System.out.println("子线程" + Thread.currentThread() + "执行出错");
 			ex.printStackTrace();
 		}
 	}

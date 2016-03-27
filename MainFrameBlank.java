@@ -26,8 +26,9 @@ public class MainFrameBlank extends JFrame {
 		return true;	
 	}
 	public static void MFBMain() {
+		Main.windowLock.lock();
 		frame = new MainFrameBlank();
-		frame.setTitle("旅行规划系统Powered by 沐晓枫&按键三&老鹰飞了");
+		frame.setTitle("旅行规划系统Powered by 沐晓枫&按键三&老鹰飞了掉地上摔死了");
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -261,6 +262,7 @@ public class MainFrameBlank extends JFrame {
 				if (pass) {
 					finalCity = (city)jcbfinal.getSelectedItem();
 					Calculate.CMain();
+					
 				}
 			}
 		});

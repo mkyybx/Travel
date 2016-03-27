@@ -23,10 +23,12 @@ import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.xml.crypto.Data;
-
+import javax.xml.transform.Result;
 
 public class Login extends JFrame
 {
+	public static java.sql.ResultSet result = Main.result;//链接
+	
 	private JTextField jtfname=new JTextField(15);//输入帐号框
 	private JPasswordField jtfpwd=new JPasswordField(15);//输入密码框
 	static Login lg=new Login();//总的面板
@@ -93,41 +95,25 @@ public class Login extends JFrame
 				
 				try 
 				{
-					Main.result = Main.st.executeQuery("select * from users where user=\""+Main.NAME+"\";" );
-					if (!Main.result.next())//验证是否注册
+					result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
+					if (!result.next())//验证是否注册
 						JOptionPane.showMessageDialog(null , "您还未注册！请先注册");
-					else if (!s.equals(Main.result.getString(2)))//验证密码是否正确
-					{
-						System.out.println(buf);
-						System.out.println(Main.result.getString(2));
+					else if (!s.equals(result.getString(2)))//验证密码是否正确
 						JOptionPane.showMessageDialog(null , "密码错误！请重新输入");
-					}
 					else//登陆成功
 					{
+						if (result.getInt("state") == 0) {
+							lg.setVisible(false);
+							MainFrameBlank.MFBMain();
+						}
 						login.removeAll();
 						setTitle("查询状态框");
-						try 
-						{
-							Main.result = Main.st.executeQuery("select * from users where user=\""+Main.NAME+"\";" );
-							while (Main.result.next())
-							{
-								if(Main.result.getString(3) == null)//无行程就调用MainFrameBlank.MFBMain()函数
-								{
-									MainFrameBlank.MFBMain();
-									Login.lg.setVisible(false);
-								}
-								else
-								{
-									
-								}
-							}
-						} 
-						catch (SQLException ex) 
-						{
-							ex.printStackTrace();
-						}
+						try {
 						Search ps=new Search();//查询状态框
 						login.add(ps);
+						} catch (Exception ex) {
+							ex.printStackTrace();
+						}
 						//lg.add(login);
 						lg.pack();
 						lg.repaint();
@@ -153,11 +139,11 @@ public class Login extends JFrame
 				else 
 				{
 				//login.setVisible(false);
-				//System.out.println("insert into users values(\""+Main.NAME+"\",\""+Main.PASSWORD+"\",NULL);");
+				//System.out.println("insert into users values('"+Main.NAME+"','"+Main.PASSWORD+"',NULL);");
 				try 
 				{
-					Main.result = Main.st.executeQuery("select * from users where user=\""+Main.NAME+"\";" );
-					if(Main.result.next())//提示帐号已注册
+					result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
+					if(result.next())//提示帐号已注册
 					{
 						JOptionPane.showMessageDialog(null , "此帐号已被注册！请重新输入");
 						Main.NAME=jtfname.getText();
@@ -184,7 +170,7 @@ public class Login extends JFrame
 								buf.append(Integer.toHexString(i));
 							} 
 							
-							int r = Main.st.executeUpdate("insert into users values(\""+Main.NAME+"\",\""+buf+"\",NULL);");
+							int r = Main.st.executeUpdate("insert into users values('"+Main.NAME+"','"+buf+"',0,null,null,null);");
 							JOptionPane.showMessageDialog(null , "注册成功！请登陆");
 						} 
 						catch (NoSuchAlgorithmException e1) 
@@ -221,17 +207,30 @@ public class Login extends JFrame
 	}
 }
 
-class Search extends JPanel//查询状态框的类
+class Search extends JPanel //查询状态框的类
 {
 	static JPanel P=new JPanel(new GridLayout(0,1));
 	
-	public Search()
+	public Search() throws Exception
 	{
+		Main.windowLock.lock();//别忘记解锁,congzhelikaishi 
+		//初始化行程信息
+		Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"'");
+		Main.result.next();
+		String prompt = Main.result.getString("prompt");//读取路线描述
+		
+		
 		JPanel line=new JPanel(new GridLayout(1,0));//显示线路的jpanel
 		JLabel l=new JLabel("路线为：",JLabel.RIGHT);
-		JLabel li=new JLabel("asfdaesfwefweffdwe",JLabel.LEFT);
+		JButton li = new JButton("显示路线");
 		line.add(l);
 		line.add(li);
+		
+		li.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Main.showMessage(prompt, null, false);
+			}
+		});
 		
 		 JPanel Pmap=new JPanel();//显示地图的jpanel
 		 JButton smap=new JButton("显示地图");

@@ -8,6 +8,8 @@ import javax.swing.JOptionPane;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Main 
 {
@@ -19,6 +21,7 @@ public class Main
 	public static String NAME;//登陆名
 	public static String PASSWORD;//登陆密码
 	public static ResultSet[] buffer;//数据缓存，出发城市，到达城市，出发时间，
+	public static Lock windowLock = new ReentrantLock();
 	
 	//重置为当前时间的函数
 	public static Date renewTime() 
@@ -102,14 +105,11 @@ public class Main
 			tempst[result.getInt("idCity")] = tempconnection[result.getInt("idCity")].createStatement();
 			buffer[result.getInt("idCity")]=tempst[result.getInt("idCity")].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + result.getString("cityname") + "'");
 		}
+		Login.login();//登录，交给下一个函数
+		//test
+		//MainFrameBlank.MFBMain();
+		//test
 		
-		//test
-		int []a = {1,2,3,4,5,6};
-		//test
-		//test
-		MainFrameBlank.MFBMain();
-		//test
-		//Login.login();//登录，交给下一个函数
 		
 		log.close();
 	}

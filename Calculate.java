@@ -22,6 +22,7 @@ public class Calculate {
 	public static Lock[] signalresult = new Lock[cityNum + 1];
 	public static StringBuilder s;//用于记录提示语
 	public static StringBuilder sqls;//用于写入数据库，数据格式：时间,城市/车次以#结束
+	public static int sqlcount;
 	
 	
 	//多线程部分
@@ -116,7 +117,7 @@ public class Calculate {
 	}
 	
 	public static void Dij(ArrayList<city> selected, boolean isTime, boolean isOrdered) throws Exception{
-		
+		sqlcount = 0;
 		StringBuilder s = new StringBuilder();
 		StringBuilder sqls = new StringBuilder();
 		int totalPrice = 0;//最后用于计算总价
@@ -233,8 +234,10 @@ public class Calculate {
 					temp = selected.get(i).cityId;
 					while (temp != 0 && temp != selected.get(i + 1).cityId) {
 						int tempPrice = 0;
+						
 						s.append(stime(r[r[temp].nextCity].previousDepartTime) + "乘坐" + r[temp].departNo + "从" + r[temp].city.name + "出发，");
 						sqls.append(sqltime(r[temp].minTime) + "," + temp + "," + sqltime(r[r[temp].nextCity].previousDepartTime) + "," + r[temp].departNo + ",");
+						sqlcount++;
 						while (r[r[temp].nextCity].departNo != null && r[r[temp].nextCity].departNo.equals(r[temp].departNo)) {
 							temp = r[temp].nextCity;
 							tempPrice += r[temp].minPrice;

@@ -1,4 +1,5 @@
-﻿import java.io.*;
+﻿package Travel;
+import java.io.*;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 
@@ -97,7 +98,6 @@ public class Main
 		Statement[] tempst = new Statement[MainFrameBlank.all.size() + 1];
 		buffer = new ResultSet[MainFrameBlank.all.size() + 1];
 		while(result.next()) {
-			System.out.println(result.getInt("idCity"));
 			tempconnection[result.getInt("idCity")] = DriverManager.getConnection("jdbc:mysql://localhost/travel","root","huang");
 			tempst[result.getInt("idCity")] = tempconnection[result.getInt("idCity")].createStatement();
 			buffer[result.getInt("idCity")]=tempst[result.getInt("idCity")].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + result.getString("cityname") + "'");

@@ -1,3 +1,4 @@
+package Travel;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
@@ -14,11 +15,17 @@ public class Calculate {
 	public static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");//创建sdf
 	public static Statement st = Main.st;//公共语句
 	public static ResultSet result = Main.result;//公共语句
+	public static int cityNum = MainFrameBlank.all.size();//城市个数
 	
 	public static long minValue = Long.MAX_VALUE;//用于剪枝，记录排列时最优数值
 	public static Semaphore signalminValue = new Semaphore(1);
+	public static Semaphore[] signalresult = new Semaphore[cityNum + 1];
 	public static StringBuilder s;//用于记录提示语
 	public static StringBuilder sqls;//用于写入数据库，数据格式：时间,城市/车次以#结束
+	
+	//test
+	public static long time;
+	//test
 	
 	//多线程部分
 	public static ExecutorService executor = Executors.newFixedThreadPool(4);//线程池
@@ -50,7 +57,8 @@ public class Calculate {
 		if (a.size() - begin == 2) {
 			ArrayList<city> temp = new ArrayList<city>();
 			temp.addAll(a);
-			executor.execute(new Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false));
+			//executor.execute(new Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false));
+			Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false);
 		}
 		else {
 			for (int i = begin; i < a.size() - 1; i++) {
@@ -69,6 +77,8 @@ public class Calculate {
 		//链接变量
 		unselected = MainFrameBlank.unselected;
 		selected = MainFrameBlank.selected;
+		for (int i = 1; i <= cityNum; i++)
+			signalresult[i] = new Semaphore(1);
 		try {
 			selected.add(MainFrameBlank.finalCity);
 			if (MainFrameBlank.isOrdered) {
@@ -90,6 +100,7 @@ public class Calculate {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		System.out.println(time);
 		//结果处理
 		int choice = JOptionPane.showConfirmDialog(null, s, "确认",JOptionPane.YES_NO_OPTION);
 		if (choice == 0) {
@@ -102,7 +113,7 @@ public class Calculate {
 		StringBuilder s = new StringBuilder();
 		StringBuilder sqls = new StringBuilder();
 		int totalPrice = 0;//最后用于计算总价
-		int cityNum = MainFrameBlank.all.size();//所有城市总数
+		cityNum = MainFrameBlank.all.size();//所有城市总数
 		long startTime = MainFrameBlank.startTime*3600000;
 		boolean canTerminate = false;//用于排列运算时剪枝，当算到某一节点时已经比最小值大了，直接pass
 		for (int i = 0; i < selected.size() - 1; i++) {//找i到i+1的最短路径
@@ -117,7 +128,6 @@ public class Calculate {
 			for (int j = 0; j < cityNum; j++) {
 				r[MainFrameBlank.all.get(j).cityId].city = MainFrameBlank.all.get(j);
 			}
-
 			//初始化出发城市
 			r[selected.get(i).cityId].previousCity=0;
 			r[selected.get(i).cityId].minTime=startTime;
@@ -132,6 +142,8 @@ public class Calculate {
 				if (selected.get(i).cityId == idCity)
 					r[idCity].departTime = r[idCity].minTime + r[idCity].city.stayTime*3600000;
 				else r[idCity].departTime = r[idCity].minTime;
+				
+				signalresult[idCity].acquire();
 				result = Main.buffer[idCity];//st[(count++) % 4].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + r[idCity].city.name + "'");
 				
 				while (result.next()) {//对每个城市松弛
@@ -161,6 +173,8 @@ public class Calculate {
 					}
 				}
 				result.first();
+				signalresult[idCity].release();
+				
 				for (int j = 1; j <= cityNum; j++) {
 					if (!r[j].isShort) {
 						if (!isTime) {
@@ -226,6 +240,8 @@ public class Calculate {
 					idCity = nextCity;
 					
 				}
+				
+				
 			}
 			
 		}

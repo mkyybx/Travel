@@ -96,7 +96,8 @@ public class Calculate {
 			ArrayList<city> copySelected = new ArrayList<city>();
 			copySelected.addAll(selected);
 			arrange(copySelected,1);
-			executor.awaitTermination(15, TimeUnit.SECONDS);		
+			executor.awaitTermination(15, TimeUnit.SECONDS);	
+			//executor.
 		}
 		selected.remove(selected.size() - 1);
 		//结果处理
@@ -152,8 +153,7 @@ public class Calculate {
 				else r[idCity].departTime = r[idCity].minTime;
 				
 				signalresult[idCity].lock();
-				
-				
+							
 				result = Main.buffer[idCity];//st[(count++) % 4].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + r[idCity].city.name + "'");
 				result.first();
 				
@@ -311,9 +311,7 @@ class Dij implements Runnable {
 	public void run(){
 		try {
 		Calculate.Dij(selected, isTime, isOrdered);
-		System.out.println("子线程" + Thread.currentThread() + "执行完毕");
 		} catch (Exception ex) {
-			System.out.println("子线程" + Thread.currentThread() + "执行出错");
 			ex.printStackTrace();
 		}
 	}

@@ -1,5 +1,6 @@
 
 
+
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.PopupMenu;
@@ -125,8 +126,10 @@ public class Login extends JFrame
 							lg.dispose();
 							MainFrameBlank.MFBMain();
 						}
-						lg.dispose();
-						Inquiry();
+						else {
+							lg.dispose();
+							Inquiry();
+						}
 					}
 				} 
 				catch (SQLException exp) 

@@ -1,4 +1,4 @@
-package Travel;
+
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
@@ -220,7 +220,7 @@ class Search extends JPanel //查询状态框的类
 		String prompt = Main.result.getString("prompt");//读取路线描述
 		//数据数组
 		String temp = Main.result.getString("route");
-		int[][] route = new int
+		、、int[][] route = new int
 		
 		JPanel line=new JPanel(new GridLayout(1,0));//显示线路的jpanel
 		JLabel l=new JLabel("路线为：",JLabel.RIGHT);

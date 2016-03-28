@@ -31,11 +31,30 @@ public class Login extends JFrame
 	
 	private JTextField jtfname=new JTextField(15);//输入帐号框
 	private JPasswordField jtfpwd=new JPasswordField(15);//输入密码框
-	static Login lg=new Login();//总的面板
+	static Login lg;//总的面板
 	
 	public static void login()
 	{
+		lg = new Login();
 		lg.pack();
+		lg.setLocationRelativeTo(null);
+		lg.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		lg.setVisible(true);
+	}
+	
+	public static void Inquiry()
+	{
+		lg=new Login();
+		lg.setTitle("查询状态框");
+		try 
+		{
+			Search ps=new Search();//查询状态框
+			lg.add(ps);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		lg.pack();
+		lg.repaint();
 		lg.setLocationRelativeTo(null);
 		lg.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		lg.setVisible(true);
@@ -103,20 +122,11 @@ public class Login extends JFrame
 					else//登陆成功
 					{
 						if (result.getInt("state") == 0) {
-							lg.setVisible(false);
+							lg.dispose();
 							MainFrameBlank.MFBMain();
 						}
-						login.removeAll();
-						setTitle("查询状态框");
-						try {
-						Search ps=new Search();//查询状态框
-						login.add(ps);
-						} catch (Exception ex) {
-							ex.printStackTrace();
-						}
-						//lg.add(login);
-						lg.pack();
-						lg.repaint();
+						lg.dispose();
+						Inquiry();
 					}
 				} 
 				catch (SQLException exp) 
@@ -213,14 +223,13 @@ class Search extends JPanel //查询状态框的类
 	
 	public Search() throws Exception
 	{
-		Main.windowLock.lock();//别忘记解锁,congzhelikaishi 
 		//初始化行程信息
 		Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"'");
 		Main.result.next();
 		String prompt = Main.result.getString("prompt");//读取路线描述
 		//数据数组
 		String temp = Main.result.getString("route");
-		、、int[][] route = new int
+		//int[][] route = new int
 		
 		JPanel line=new JPanel(new GridLayout(1,0));//显示线路的jpanel
 		JLabel l=new JLabel("路线为：",JLabel.RIGHT);
@@ -240,10 +249,12 @@ class Search extends JPanel //查询状态框的类
 		 {
 			public void actionPerformed(ActionEvent arg0) 
 			{
-				if(!Showmap.smap.isShowing())//按下时调用Showmap.ShowmapMain()显示地图
+				if(true)//按下时调用Showmap.ShowmapMain()显示地图
 				{
 					Showmap.ShowmapMain();
-					Login.lg.setVisible(false);
+					Login.lg.dispose();
+					
+					Login.Inquiry();
 				}
 			}
 		 });
@@ -292,8 +303,9 @@ class Search extends JPanel //查询状态框的类
 			public void actionPerformed(ActionEvent e) 
 			{
 				if(!MainFrameBlank.frame.isShowing())//调用MainFrameBlank.MFBMain()更改行程
-				{	MainFrameBlank.MFBMain();
-					Login.lg.setVisible(false);
+				{	
+					MainFrameBlank.MFBMain();
+					Login.lg.dispose();
 				}
 			}
 		 });

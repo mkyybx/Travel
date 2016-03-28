@@ -14,7 +14,6 @@ public class Calculate {
 	public static ArrayList<city> selected;//已选城市
 	public static SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");//创建sdf
 	public static Statement st = Main.st;//公共语句
-	public static ResultSet result = Main.result;//公共语句
 	public static int cityNum = MainFrameBlank.all.size();//城市个数
 	
 	public static long minValue;//用于剪枝，记录排列时最优数值
@@ -23,6 +22,11 @@ public class Calculate {
 	public static StringBuilder s;//用于记录提示语
 	public static StringBuilder sqls;//用于写入数据库，数据格式：时间,城市/车次以#结束
 	public static int sqlcount;
+	
+	//test
+	public static long finished;
+	public static long overall;
+	//test
 	
 	
 	//多线程部分
@@ -57,6 +61,7 @@ public class Calculate {
 			temp.addAll(a);
 			executor.execute(new Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false));
 			//Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false);
+			overall++;
 		}
 		else {
 			for (int i = begin; i < a.size() - 1; i++) {
@@ -95,9 +100,17 @@ public class Calculate {
 			//排列，递归调用
 			ArrayList<city> copySelected = new ArrayList<city>();
 			copySelected.addAll(selected);
+			overall = 0;
+			finished = 0;
 			arrange(copySelected,1);
-			executor.awaitTermination(15, TimeUnit.SECONDS);	
-			//executor.
+			//test
+			while (finished/overall != 1) {
+				Thread.sleep(1000);
+				System.out.println(finished + "/" + overall + " " + (finished*1.0) / overall);
+			}
+			//test
+			//executor.awaitTermination(15, TimeUnit.SECONDS);	
+			
 		}
 		selected.remove(selected.size() - 1);
 		//结果处理
@@ -118,6 +131,7 @@ public class Calculate {
 	}
 	
 	public static void Dij(ArrayList<city> selected, boolean isTime, boolean isOrdered) throws Exception{
+		ResultSet result = Main.result;//公共语句
 		sqlcount = 0;
 		StringBuilder s = new StringBuilder();
 		StringBuilder sqls = new StringBuilder();
@@ -309,8 +323,9 @@ class Dij implements Runnable {
 	boolean isTime;
 	boolean isOrdered;
 	public void run(){
-		try {
+		try {(Calculate.finished)++;
 		Calculate.Dij(selected, isTime, isOrdered);
+		
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

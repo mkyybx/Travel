@@ -20,17 +20,20 @@ public class Calculate {
 	public static Lock signalminValue;
 	public static Lock[] signalresult = new Lock[cityNum + 1];
 	public static StringBuilder s;//用于记录提示语
-	public static StringBuilder sqls;//用于写入数据库，数据格式：时间,城市/车次以#结束
-	public static int sqlcount;
+	public static StringBuilder sqls;//用于写入数据库，数据格式：最开始有一个数据表示后面的数据个数，每个逗号算一个。时间,城市/车次以#结束
+	public static int sqlcount;//统计写入sql route字段的数字数量
+	
+	public static Result[][][] dataBuffer;//仅当递归时启用
 	
 	//test
 	public static long finished;
 	public static long overall;
+	public static long time;
 	//test
 	
 	
 	//多线程部分
-	public static ExecutorService executor = Executors.newFixedThreadPool(4);//线程池
+	public static ExecutorService executor = Executors.newFixedThreadPool(1);//线程池
 	
 	//转成sql能识别的时间格式,包含了日期信息
 	public static synchronized String sqltime(long time) {
@@ -59,8 +62,9 @@ public class Calculate {
 		if (a.size() - begin == 2) {
 			ArrayList<city> temp = new ArrayList<city>();
 			temp.addAll(a);
-			executor.execute(new Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false));
-			//Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false);
+			//executor.execute(new Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false));
+			Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false);
+			//System.out.println(finished + "/" + overall + " " + (finished*1.0) / overall);
 			overall++;
 		}
 		else {
@@ -100,24 +104,31 @@ public class Calculate {
 			//排列，递归调用
 			ArrayList<city> copySelected = new ArrayList<city>();
 			copySelected.addAll(selected);
+			dataBuffer = new Result[cityNum + 1][24][1];
 			overall = 0;
 			finished = 0;
+			
 			arrange(copySelected,1);
 			//test
-			while (finished/overall != 1) {
+			long time1 = System.currentTimeMillis();
+			while ((finished * 1.0)/overall <= 0.9) {
 				Thread.sleep(1000);
 				System.out.println(finished + "/" + overall + " " + (finished*1.0) / overall);
 			}
+			
+			System.out.println("time = " + time);
+			System.out.println("apptime = " + (System.currentTimeMillis() - time1));
+			System.out.println((time * 1.0) / (System.currentTimeMillis() - time1));
 			//test
 			//executor.awaitTermination(15, TimeUnit.SECONDS);	
 			
 		}
 		selected.remove(selected.size() - 1);
 		//结果处理
-		
-		int choice = JOptionPane.showConfirmDialog(null, s, "确认",JOptionPane.YES_NO_OPTION);
+		int choice = JOptionPane.showConfirmDialog(null, s.append(sqls), "确认",JOptionPane.YES_NO_OPTION);
 		if (choice == 0) {
 			//向数据库写入真实出发时间，行程数据
+			sqls.insert(0, sqlcount).insert(1, ',');
 			st.executeUpdate("update users set state = 1, starttime = " + System.currentTimeMillis() + ", route = '" + sqls + "', prompt = '" + s + "' where user = '" + Main.NAME + "'");
 			MainFrameBlank.frame.dispose();
 			Thread.sleep(500);
@@ -151,6 +162,7 @@ public class Calculate {
 			for (int j = 0; j < cityNum; j++) {
 				r[MainFrameBlank.all.get(j).cityId].city = MainFrameBlank.all.get(j);
 			}
+			
 			//初始化出发城市
 			r[selected.get(i).cityId].previousCity=0;
 			r[selected.get(i).cityId].minTime=startTime;
@@ -159,6 +171,7 @@ public class Calculate {
 			int idCity = selected.get(i).cityId;//当前城市ID
 		
 			while (true) {//每一次dij
+				
 				long minTime = Long.MAX_VALUE;//最短时间下个城市
 				int minPrice = Integer.MAX_VALUE;//最短金钱下个城市
 				int nextCity = 0;
@@ -166,11 +179,72 @@ public class Calculate {
 					r[idCity].departTime = r[idCity].minTime + r[idCity].city.stayTime*3600000;
 				else r[idCity].departTime = r[idCity].minTime;
 				
+				//查找缓存
+				if (!isOrdered && dataBuffer[idCity][(int)((r[idCity].departTime) % (24 * 3600000) / 3600000)][0] != null) {
+					nextCity = selected.get(i + 1).cityId;
+					r = dataBuffer[idCity][(int)((r[idCity].departTime) % (24 * 3600000) / 3600000)];
+					long interval = r[idCity].departTime - r[idCity].minTime;
+					int temp = selected.get(i + 1).cityId;
+					//短路
+					signalminValue.lock();
+					if (isTime) {
+						if (r[nextCity].minTime > minValue) {
+							canTerminate = true;
+							break;
+						}
+					}
+					else {
+						if (r[nextCity].minPrice > minValue) {
+							canTerminate = true;
+							break;
+						}
+					}
+					signalminValue.unlock();
+					while (temp != 0) {
+						r[r[temp].previousCity].nextCity = temp;
+						r[r[temp].previousCity].departNo = r[temp].arriveNo;
+						r[temp].minPrice = r[temp].minPrice - r[r[temp].previousCity].minPrice;
+						r[temp].minTime -= interval;//修正时间
+						r[temp].previousDepartTime -= interval;//修正时间
+						temp = r[temp].previousCity;
+					}
+					temp = selected.get(i).cityId;
+					while (temp != 0 && temp != selected.get(i + 1).cityId) {
+						int tempPrice = 0;
+						
+						s.append(stime(r[r[temp].nextCity].previousDepartTime) + "乘坐" + r[temp].departNo + "从" + r[temp].city.name + "出发，");
+						sqls.append(sqltime(r[temp].minTime) + "," + temp + "," + sqltime(r[r[temp].nextCity].previousDepartTime) + "," + r[temp].departNo + ",");
+						sqlcount+=4;
+						while (r[r[temp].nextCity].departNo != null && r[r[temp].nextCity].departNo.equals(r[temp].departNo)) {
+							temp = r[temp].nextCity;
+							tempPrice += r[temp].minPrice;
+						}
+						temp = r[temp].nextCity;
+						tempPrice += r[temp].minPrice;
+						s.append(stime(r[temp].minTime) + "到达" + r[temp].city.name + "，票价" + tempPrice + "元" + "\n");
+						totalPrice += tempPrice;
+					}
+					startTime = r[selected.get(i + 1).cityId].minTime;
+					s.append("\n");
+					if (i + 1 == selected.size() - 1) {
+						sqls.append(sqltime(r[selected.get(i + 1).cityId].minTime) + "," + selected.get(i + 1).cityId + "#");
+						sqlcount+=2;
+					}
+					temp = selected.get(i + 1).cityId;
+					while (temp != 0) {
+						r[temp].minTime += interval;//修正时间
+						r[temp].previousDepartTime += interval;//修正时间
+						temp = r[temp].previousCity;
+					}
+					
+				break;
+			}
+				
 				signalresult[idCity].lock();
 							
 				result = Main.buffer[idCity];//st[(count++) % 4].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + r[idCity].city.name + "'");
 				result.first();
-				
+				long time1 = System.currentTimeMillis();
 				do {//对每个城市松弛
 					
 					if (!r[result.getInt("idcity")].isShort) {
@@ -198,7 +272,7 @@ public class Calculate {
 						}
 					}
 				} while (result.next());
-				
+				time += System.currentTimeMillis() - time1;
 				signalresult[idCity].unlock();
 				
 				for (int j = 1; j <= cityNum; j++) {
@@ -217,24 +291,32 @@ public class Calculate {
 						}
 					}
 				}
+				
 				r[nextCity].isShort = true;
+				
+				//建立缓存
 				if (!isOrdered) {
-					
-					signalminValue.lock();
-					if (isTime) {
-						if (r[nextCity].minTime > minValue) {
-							canTerminate = true;
+					boolean goon = false;
+					for (int j = 1; j <= cityNum; j++) {
+						if (!r[j].isShort) {
+							goon = true;
 							break;
 						}
+					}
+					if (goon) {
+						idCity = nextCity;
+						continue;
 					}
 					else {
-						if (r[nextCity].minPrice > minValue) {
-							canTerminate = true;
-							break;
+						dataBuffer[selected.get(i).cityId][(int)(r[selected.get(i).cityId].departTime % (24 * 3600000) / 3600000)] = r.clone();
+						for (int j = 1; j <= cityNum; j++) {
+							if (r[j].city.name.equals(selected.get(i + 1).name))
+								nextCity = j;
 						}
 					}
-					signalminValue.unlock();
+					
 				}
+				
 				
 				if (r[nextCity].city.name.equals(selected.get(i + 1).name)) {
 					int temp = nextCity;//selected.get(i).cityId;
@@ -243,6 +325,7 @@ public class Calculate {
 						r[r[temp].previousCity].departNo = r[temp].arriveNo;
 						r[temp].minPrice = r[temp].minPrice - r[r[temp].previousCity].minPrice;
 						//System.out.println(r[temp].city.name + ":第" + r[temp].minTime / 24 / 3600000 + "天" + r[temp].minTime % (24*3600000) / 3600000 + "时" + r[temp].minTime % 3600000 / 60000 + "分到达，停留" + r[temp].city.stayTime + "小时 " );
+						
 						temp = r[temp].previousCity;
 					}
 					temp = selected.get(i).cityId;
@@ -251,7 +334,7 @@ public class Calculate {
 						
 						s.append(stime(r[r[temp].nextCity].previousDepartTime) + "乘坐" + r[temp].departNo + "从" + r[temp].city.name + "出发，");
 						sqls.append(sqltime(r[temp].minTime) + "," + temp + "," + sqltime(r[r[temp].nextCity].previousDepartTime) + "," + r[temp].departNo + ",");
-						sqlcount++;
+						sqlcount+=4;
 						while (r[r[temp].nextCity].departNo != null && r[r[temp].nextCity].departNo.equals(r[temp].departNo)) {
 							temp = r[temp].nextCity;
 							tempPrice += r[temp].minPrice;
@@ -263,8 +346,10 @@ public class Calculate {
 					}
 					startTime = r[nextCity].minTime;
 					s.append("\n");
-					if (i + 1 == selected.size() - 1)
+					if (i + 1 == selected.size() - 1) {
 						sqls.append(sqltime(r[selected.get(i + 1).cityId].minTime) + "," + selected.get(i + 1).cityId + "#");
+						sqlcount+=2;
+					}
 					break;
 				}
 				else {
@@ -325,7 +410,6 @@ class Dij implements Runnable {
 	public void run(){
 		try {(Calculate.finished)++;
 		Calculate.Dij(selected, isTime, isOrdered);
-		
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

@@ -55,8 +55,39 @@ public class Main
 		p.repaint();
 	}
 	
+	static void arrange(int[] a, int begin) throws Exception{
+		if (a.length - begin == 2) {
+			for(int i = 0; i < a.length; i++)
+				System.out.print(a[i]);
+			System.out.println();
+		}
+		else {
+			for (int i = begin; i < a.length - 1; i++) {
+				int temp = a[i];
+				a[i] = a[begin];
+				a[begin] = temp;
+				arrange(a, begin + 1);
+				temp = a[i];
+				a[i] = a[begin];
+				a[begin] = temp;
+			}
+		}
+	}
+	
 	public static void main(String args[]) throws Exception 
 	{
+		
+		int begin = 1;
+		int []a = new int[5];
+		for(int i = 0; i < a.length; i++)
+			a[i] = i;
+		arrange(a,1);
+		
+		
+		
+		
+		
+		
 		
 		//记录日志
 		try 

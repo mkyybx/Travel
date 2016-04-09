@@ -35,7 +35,7 @@ public class MainFrameBlank extends JFrame {
 		frame.setVisible(true);
 	}
 	MainFrameBlank() {
-		
+		System.out.println(Thread.currentThread().getName());
 		//setLayout(new GridLayout(0,1));
 		setLayout(new BorderLayout());
 		
@@ -164,6 +164,7 @@ public class MainFrameBlank extends JFrame {
 		JButton jbtstay = new JButton("确定");
 		jbtstay.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				System.out.println(Thread.currentThread());
 				if (jtfstay.getText().equals(""))
 					Main.showMessage("停留时间不能为空");
 				else if (!isNumber(jtfstay.getText()))
@@ -203,6 +204,7 @@ public class MainFrameBlank extends JFrame {
 		JButton jbtcancel = new JButton("取消");
 		jbtok.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				System.out.println(Thread.currentThread());
 				boolean pass = false;
 				//记录是否按顺序旅行
 				if (jrbisordered.isSelected())
@@ -261,7 +263,11 @@ public class MainFrameBlank extends JFrame {
 				
 				if (pass) {
 					finalCity = (city)jcbfinal.getSelectedItem();
-					Calculate.CMain();
+					try {
+						Calculate.CMain();
+					} catch (Exception ex) {
+						ex.printStackTrace();
+					}
 					
 				}
 			}

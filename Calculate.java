@@ -80,8 +80,10 @@ public class Calculate {
 				a[i] = a[begin];
 				a[begin] = temp;
 				ReturnResult r1 = minDij(isTime, r.clone(), a[begin], a[begin - 1]);//r之后为到begin的最短
-				if ((isTime ? r1.time : r1.money) > minValue)
+				if ((isTime ? r1.time : r1.money) > minValue) {
+					count++;
 					continue;
+				}
 				arrange(isTime, a, begin + 1, r1);
 				temp = a[i];
 				a[i] = a[begin];
@@ -90,11 +92,13 @@ public class Calculate {
 		}
 	}
 	
-	public static void CMain() {
-		try {
+	public static void CMain() throws Exception{
+		
 		//链接变量
 		unselected = MainFrameBlank.unselected;
 		selected = MainFrameBlank.selected;
+		count = 0;
+		allcount = 0;
 		//初始化
 		minValue = Long.MAX_VALUE;//用于剪枝，记录排列时最优数值
 		signalminValue = new ReentrantLock();
@@ -157,9 +161,7 @@ public class Calculate {
 			Main.windowLock.unlock();
 			//下一步
 		}
-		} catch(Exception ex) {
-			ex.printStackTrace();
-		}
+		
 	}
 	
 	public static void Dij(ArrayList<city> selected, boolean isTime, boolean isOrdered, int cityNo, int Time) throws Exception{

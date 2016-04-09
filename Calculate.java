@@ -61,10 +61,14 @@ public class Calculate {
 		else return 0;
 	}
 	//排列
-	static void arrange(int[] a, int begin) throws Exception{
-		if (a.length - begin == 2) {
+	static void arrange(boolean isTime, int[] a, int begin, ReturnResult r) throws Exception{
+		if (a.length - begin == 1) {
 			//executor.execute(new minDij(a.clone(), MainFrameBlank.strategy == 1 ? true : false));
-			minDij(a.clone(), MainFrameBlank.strategy == 1 ? true : false);
+			minDij(isTime, r, a[begin], a[begin - 1]);
+			if ((isTime ? r.time : r.money) < minValue) {
+				minValue = (isTime ? r.time : r.money);
+				sequence = a.clone();
+			}
 			allcount++;
 			//Dij(temp ,MainFrameBlank.strategy == 1 ? true : false,false);
 			//System.out.println(finished + "/" + overall + " " + (finished*1.0) / overall);
@@ -75,7 +79,10 @@ public class Calculate {
 				int temp = a[i];
 				a[i] = a[begin];
 				a[begin] = temp;
-				arrange(a, begin + 1);
+				ReturnResult r1 = minDij(isTime, r.clone(), a[begin], a[begin - 1]);//r之后为到begin的最短
+				if ((isTime ? r1.time : r1.money) > minValue)
+					continue;
+				arrange(isTime, a, begin + 1, r1);
 				temp = a[i];
 				a[i] = a[begin];
 				a[begin] = temp;
@@ -114,7 +121,7 @@ public class Calculate {
 			overall = 0;
 			finished = 0;
 			long time1 = System.currentTimeMillis();
-			arrange(a,1);
+			arrange(MainFrameBlank.strategy == 1 ? true : false, a, 1, new ReturnResult(MainFrameBlank.startTime, 0));
 			//executor.awaitTermination(15, TimeUnit.SECONDS);
 			for (int i = 0; i < sequence.length; i++) {
 				System.out.println(sequence[i]);
@@ -389,9 +396,9 @@ public class Calculate {
 		}
 	}
 	
-	public static void minDij(int[] seq, boolean isTime) throws Exception {
-		long startTime = MainFrameBlank.startTime*3600000;
-		int minMoney = 0;
+	public static ReturnResult minDij(boolean isTime, ReturnResult r, int nextcity, int currentcity) throws Exception {//ReturnResult中的时间为计算过经停时间的时间，nextCity为selected中是编号
+		
+		/*int minMoney = 0;
 		boolean canTerminate = false;//用于排列运算时剪枝，当算到某一节点时已经比最小值大了，直接pass
 		for (int i = 0; i < seq.length - 1; i++) {//找i到i+1的最短路径
 			startTime += selected.get(seq[i + 1]).stayTime;
@@ -399,22 +406,24 @@ public class Calculate {
 				count++;
 				canTerminate = true;
 				break;
-			}
-			int idCity = selected.get(seq[i]).cityId;//当前城市ID
-			int nextCity = selected.get(seq[i + 1]).cityId;
+			}*/
+			int idCity = selected.get(currentcity).cityId;//当前城市ID
+			int nextCity = selected.get(nextcity).cityId;//下个城市ID
 			
-			if (dataBuffer[idCity][nextCity][(int)(startTime % (24 * 3600000) / 3600000)][isTime ? 0 : 1] == 0)
-				Dij(null, isTime, false, idCity, (int)(startTime % (24 * 3600000)));
+			if (dataBuffer[idCity][nextCity][(int)(r.time % (24 * 3600000) / 3600000)][isTime ? 0 : 1] == 0)
+				Dij(null, isTime, false, idCity, (int)(r.time % (24 * 3600000)));
 			if (!isTime)
-				minMoney += dataBuffer[idCity][nextCity][(int)(startTime % (24 * 3600000) / 3600000)][1];
-			startTime += dataBuffer[idCity][nextCity][(int)(startTime % (24 * 3600000) / 3600000)][0] - (startTime % (24 * 3600000));	
-		}
+				r.money += dataBuffer[idCity][nextCity][(int)(r.time % (24 * 3600000) / 3600000)][1];
+			r.time += dataBuffer[idCity][nextCity][(int)(r.time % (24 * 3600000) / 3600000)][0] - (r.time % (24 * 3600000));	
+			r.time += selected.get(nextcity).stayTime;
+			return r;
+		/*}
 		if (!canTerminate) {
 			if ((isTime ? startTime : minMoney) < minValue) {
 				minValue = (isTime ? startTime : minMoney);
 				sequence = seq;
 			}
-		}
+		}*/
 	}
 }
 
@@ -432,7 +441,7 @@ class Result {
 	
 }
 
-class ReturnResult {
+class ReturnResult implements Cloneable{
 	String route;
 	long time;
 	int money;
@@ -442,6 +451,15 @@ class ReturnResult {
 		this.time = time;
 		this.money = money;
 	}
+	
+	ReturnResult(long time, int money) {
+		this.time = time;
+		this.money = money;
+	}
+	
+	public ReturnResult clone() {
+		return new ReturnResult(route,time,money);//route故意不复制，因为无用
+	}
 }
 
 class minDij implements Runnable {
@@ -450,7 +468,7 @@ class minDij implements Runnable {
 	
 	public void run(){
 		try {(Calculate.finished)++;
-		Calculate.minDij(seq, isTime);
+		//Calculate.minDij(seq, isTime);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

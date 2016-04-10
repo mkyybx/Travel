@@ -1,12 +1,12 @@
 
 
-
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.PopupMenu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
@@ -39,25 +39,7 @@ public class Login extends JFrame
 		lg = new Login();
 		lg.pack();
 		lg.setLocationRelativeTo(null);
-		lg.setDefaultCloseOperation(EXIT_ON_CLOSE);
-		lg.setVisible(true);
-	}
-	
-	public static void Inquiry()
-	{
-		lg=new Login();
-		lg.setTitle("查询状态框");
-		try 
-		{
-			Search ps=new Search();//查询状态框
-			lg.add(ps);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		lg.pack();
-		lg.repaint();
-		lg.setLocationRelativeTo(null);
-		lg.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		//lg.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		lg.setVisible(true);
 	}
 	
@@ -123,12 +105,18 @@ public class Login extends JFrame
 					else//登陆成功
 					{
 						if (result.getInt("state") == 0) {
-							lg.dispose();
+							lg.dispatchEvent(new WindowEvent(lg, WindowEvent.WINDOW_CLOSING));
+							//lg.dispose();
 							MainFrameBlank.MFBMain();
 						}
 						else {
-							lg.dispose();
-							Inquiry();
+							try {
+								Search.Inquiry();
+							} catch (Exception e1) {
+								e1.printStackTrace();
+							}
+							lg.dispatchEvent(new WindowEvent(lg, WindowEvent.WINDOW_CLOSING));
+							//lg.dispose();
 						}
 					}
 				} 
@@ -220,9 +208,10 @@ public class Login extends JFrame
 	}
 }
 
-class Search extends JPanel //查询状态框的类
+class Search extends JFrame//查询状态框的类
 {
 	static JPanel P=new JPanel(new GridLayout(0,1));
+	static Search s;
 	
 	public Search() throws Exception
 	{
@@ -234,7 +223,7 @@ class Search extends JPanel //查询状态框的类
 		String temp = Main.result.getString("route");
 		//int[][] route = new int
 		
-		JPanel line=new JPanel(new GridLayout(1,0));//显示线路的jpanel
+		JPanel line=new JPanel();//显示线路的jpanel
 		JLabel l=new JLabel("路线为：",JLabel.RIGHT);
 		JButton li = new JButton("显示路线");
 		line.add(l);
@@ -252,29 +241,48 @@ class Search extends JPanel //查询状态框的类
 		 {
 			public void actionPerformed(ActionEvent arg0) 
 			{
-				if(true)//按下时调用Showmap.ShowmapMain()显示地图
+				if(!Showmap.smap.isShowing())//按下时调用Showmap.ShowmapMain()显示地图
 				{
-					Showmap.ShowmapMain();
-					Login.lg.dispose();
-					
-					Login.Inquiry();
+					s.setVisible(false);
+					Showmap.smap.setVisible(true);
+					//s.dispatchEvent(new WindowEvent(s, WindowEvent.WINDOW_CLOSING));
 				}
+//				s.setVisible(false);
+//				Showmap.smap.repaint();
+//				Showmap.smap.setVisible(true);
 			}
 		 });
 		 
 		 JPanel Stime=new JPanel(new GridLayout(1,0));//显示时间的jpanel
 		 Date date=new Date();
 		 JLabel Ltime=new JLabel("实时时间：",JLabel.CENTER);
-		 SimpleDateFormat t = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//时间显示格式
-		 JLabel Time=new JLabel(t.format(date)+"      ",JLabel.LEFT);
+		 //SimpleDateFormat t = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//时间显示格式
+		 Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
+		 Main.result.next();
+		 String  starttime= Main.result.getString("starttime");
+		 long systemt=System.currentTimeMillis()-Long.parseLong(starttime);
+		 long second=systemt/1000%60;
+		 long minute=systemt/1000/60%60;
+		 long hour=systemt/1000/60/60%24;
+		 JLabel Time=new JLabel(hour+":"+minute+":"+second);
 		 javax.swing.Timer timer=new javax.swing.Timer(1000,new ActionListener() //定时器
 		 {
 			public void actionPerformed(ActionEvent e) 
 			{
-				Date date=new Date();//定时显示时间
-				Time.setText(t.format(date)+"      ");
+				try {
+					Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
+					Main.result.next();
+					String  starttime= Main.result.getString("starttime");
+					long systemt=System.currentTimeMillis()-Long.parseLong(starttime);
+					long second=systemt/1000%60;
+					long minute=systemt/1000/60%60;
+					long hour=systemt/1000/60/60%24;
+					Time.setText(hour+":"+minute+":"+second);
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+				
 //				System.out.println(date.toString());
-				Login.lg.pack();
 				repaint();
 			}
 		 });
@@ -289,9 +297,8 @@ class Search extends JPanel //查询状态框的类
 		 {
 			public void actionPerformed(ActionEvent e) 
 			{
-				Date date=new Date();//实时刷新
-				state.setText(t.format(date)+"      ");
-				Login.lg.pack();
+				
+				
 				repaint();
 			}
 		 });
@@ -305,11 +312,13 @@ class Search extends JPanel //查询状态框的类
 		 {
 			public void actionPerformed(ActionEvent e) 
 			{
-				if(!MainFrameBlank.frame.isShowing())//调用MainFrameBlank.MFBMain()更改行程
-				{	
-					MainFrameBlank.MFBMain();
-					Login.lg.dispose();
-				}
+				MainFrameBlank.MFBMain();
+				s.setVisible(false);
+//				if(!MainFrameBlank.frame.isShowing())//调用MainFrameBlank.MFBMain()更改行程
+//				{	
+//					MainFrameBlank.MFBMain();
+//					s.setVisible(false);
+//				}
 			}
 		 });
 		 change.add(c);
@@ -321,5 +330,16 @@ class Search extends JPanel //查询状态框的类
 		 P.add(change);
 		 P.add(Pstate);
 		 add(P);
+	}
+	
+	public static void Inquiry() throws Exception
+	{
+		s=new Search();
+		s.setTitle("查询状态框");
+		s.pack();
+		s.repaint();
+		s.setLocationRelativeTo(null);
+		s.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		s.setVisible(true);
 	}
 }

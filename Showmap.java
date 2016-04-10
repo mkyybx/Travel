@@ -26,7 +26,6 @@ public class Showmap extends JFrame
 		smap.setSize(1000,600);
 		smap.setLocationRelativeTo(null);
 		smap.setDefaultCloseOperation(EXIT_ON_CLOSE);
-		smap.setVisible(true);
 	}
 	
 	public Showmap()
@@ -58,7 +57,8 @@ public class Showmap extends JFrame
 		{
 			public void actionPerformed(ActionEvent e) 
 			{
-				smap.dispose();
+				smap.setVisible(false);;
+				Search.s.setVisible(true);
 			}
 		});
 		Pb.add(back);

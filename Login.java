@@ -7,6 +7,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
@@ -291,15 +293,48 @@ class Search extends JFrame//查询状态框的类
 		 Stime.add(Time);
 		 
 		 JPanel Pstate=new JPanel(new GridLayout(1,0));//状态的jpanel
-		 JLabel st=new JLabel("您的状态为：",JLabel.RIGHT);
-		 JLabel state=new JLabel();
+		 JLabel st=new JLabel("您现在位于为：",JLabel.RIGHT);
+		 JLabel state=new JLabel("       ");
 		 javax.swing.Timer timers=new javax.swing.Timer(1000,new ActionListener() //定时器
 		 {
 			public void actionPerformed(ActionEvent e) 
 			{
+				try {
+					Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
+					Main.result.next();
+					String  in= Main.result.getString("route");
+					String [] stateroute=in.split(",");//string以“，”为分隔符转化为string数组
+					//System.out.println(stateroute[3]);
+					
+					Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
+					Main.result.next();
+					String  starttime= Main.result.getString("starttime");
+					long systemt=System.currentTimeMillis()-Long.parseLong(starttime);
+					long hour=systemt/1000/60/60%24;
+					int i=0;
+					for(;i<stateroute.length-3;i+=2)
+					{
+						hour+=Long.parseLong(stateroute[0])/10;
+						if(i%2==0&&Long.parseLong(stateroute[i])/10<=hour&&Long.parseLong(stateroute[i+2])/10>hour)
+						{
+							if(Character.isDigit(stateroute[i+1].toCharArray()[0]))
+							{
+								Main.result = Main.st.executeQuery("select * from city where idcity='"+stateroute[i+1]+"';" );
+								Main.result.next();
+								state.setText(Main.result.getString("cityname"));
+							}
+							else 
+							{
+								state.setText("车次"+stateroute[i+1]);
+							}
+							break;
+						}
+					}
+					repaint();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
 				
-				
-				repaint();
 			}
 		 });
 		 timers.start();//开启定时器

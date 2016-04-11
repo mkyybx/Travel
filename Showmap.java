@@ -17,9 +17,10 @@ import javax.swing.JPanel;
 
 public class Showmap extends JFrame 
 {
-	static Showmap smap = new Showmap();//地图的jframe
+	static Showmap smap= new Showmap();;//地图的jframe
 	float [] mapx=new float[13];//各个城市的x轴比例
 	float [] mapy=new float[13];//各个城市的y轴比例
+	static int num;
 	
 	public static void ShowmapMain()
 	{
@@ -30,24 +31,6 @@ public class Showmap extends JFrame
 	
 	public Showmap()
 	{
-		try 
-		{
-			for(int i=0;i<13;i++)	
-			{
-				Main.result = Main.st.executeQuery("select * from city where idcity=" +(int)(i+1));
-				while (Main.result.next())//得到各个城市的xy比例
-					{
-						mapx[i]=((float)(Main.result.getInt(4))/1000);
-						mapy[i]=((float)Main.result.getInt(5)/709);
-						System.out.println(mapx[i]);
-					}
-			}
-		} 
-		catch (Exception ex) 
-		{
-			ex.printStackTrace();
-		}
-		
 		setTitle("地图");
 		setLayout(new BorderLayout());
 		add(new MapPanel(),BorderLayout.CENTER);
@@ -71,6 +54,47 @@ public class Showmap extends JFrame
 		{
 			super.paintComponents(g);
 			
+			String  in;
+			String [] stateroute = null;
+			try {
+				Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
+				while(Main.result.next()) 
+				{
+					in= Main.result.getString("route");
+					stateroute=in.split(",");//string以“，”为分隔符转化为string数组
+					System.out.println(stateroute.length);
+				}
+				for(int i=0,j=1;i<stateroute.length;i+=2)
+				{
+					if(Character.isDigit(stateroute[i+1].toCharArray()[0]))
+						{
+							Main.MAPID[j-1]=Integer.parseInt(stateroute[i+1]);
+							num=j;
+							j++;
+						}
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+			try 
+			{
+				for(int i=0;i<13;i++)	
+				{
+					Main.result = Main.st.executeQuery("select * from city where idcity=" +(int)(i+1));
+					while (Main.result.next())//得到各个城市的xy比例
+						{
+							mapx[i]=((float)(Main.result.getInt(4))/1000);
+							mapy[i]=((float)Main.result.getInt(5)/709);
+							System.out.println(mapx[i]);
+						}
+				}
+			} 
+			catch (Exception ex) 
+			{
+				ex.printStackTrace();
+			}
+			
 			ImageIcon image=new ImageIcon("img/map.jpg");
 			Dimension size=this.getSize();//使图像比例随窗口变化
 			g.drawImage(image.getImage(), 0, 0, size.width,size.height,null);
@@ -78,8 +102,8 @@ public class Showmap extends JFrame
 			int x=getWidth();
 			int y=getHeight();
 			
-			int [] mx=new int[mapx.length];//各城市x的坐标
-			int [] my=new int[mapy.length];//各城市y的坐标
+			int [] mx=new int[13];//各城市x的坐标
+			int [] my=new int[13];//各城市y的坐标
 			for(int i=0;i<13;i++)//各城市xy的坐标
 			{
 				mx[i]=(int) (mapx[i]*x);
@@ -91,7 +115,7 @@ public class Showmap extends JFrame
 			{
 				try 
 				{
-					Main.result = Main.st.executeQuery("select * from city where idcity=" +(int)(i+1));
+					Main.result = Main.st.executeQuery("select * from city where idcity=" +(int)(i+1)+";");
 					while (Main.result.next())
 					{
 						g.drawString(Main.result.getString(2), mx[i], my[i]);
@@ -104,14 +128,14 @@ public class Showmap extends JFrame
 			}
 			
 			g.setColor(Color.black);
-			int [] mxc=new int[Main.MAPID.length];
-			int [] myc=new int[Main.MAPID.length];
-			for(int i=0;i<Main.MAPID.length;i++)//输出各个行车路线
+			int [] mxc=new int[num];
+			int [] myc=new int[num];
+			for(int i=0;i<num;i++)//输出各个行车路线
 			{
 				mxc[i]=(int) (mx[Main.MAPID[i]-1]);
 				myc[i]=(int) (my[Main.MAPID[i]-1]);
 			}
-			g.drawPolyline(mxc, myc, mxc.length);
+			g.drawPolyline(mxc, myc, num);
 		}
 	}
 }

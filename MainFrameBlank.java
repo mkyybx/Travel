@@ -266,6 +266,7 @@ public class MainFrameBlank extends JFrame {
 					try {
 						Calculate.CMain();
 					} catch (Exception ex) {
+						selected.remove(selected.size() - 1);
 						ex.printStackTrace();
 					}
 					

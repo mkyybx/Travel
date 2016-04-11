@@ -55,21 +55,28 @@ public class Main
 		p.repaint();
 	}
 	
-	static void arrange(int[] a, int begin) throws Exception{
-		if (a.length - begin == 2) {
-			for(int i = 0; i < a.length; i++)
-				System.out.print(a[i]);
-			System.out.println();
+	static void arrange(ArrayList<city> a, int begin, int[] b) throws Exception{
+		if (a.size() - begin == 2) {
+			Calculate.arrange(MainFrameBlank.strategy == 1 ? true : false, b, 1, new ReturnResult(MainFrameBlank.startTime, 0));
+			for (int i = 0; i < b.length; i++) {
+				System.out.print(Calculate.sequence[i]);
+			}
+			System.out.println("\n" + Calculate.minValue);
+			ArrayList<city> c = new ArrayList<city>();
+			c.addAll(a);
+			Calculate.Dij(c, false, true, 0, 0);
+			Calculate.minValue = Long.MAX_VALUE;
+			Calculate.minValueAux = Long.MAX_VALUE;
 		}
 		else {
-			for (int i = begin; i < a.length - 1; i++) {
-				int temp = a[i];
-				a[i] = a[begin];
-				a[begin] = temp;
-				arrange(a, begin + 1);
-				temp = a[i];
-				a[i] = a[begin];
-				a[begin] = temp;
+			for (int i = begin; i < a.size() - 1; i++) {
+				city temp = a.get(i);
+				a.set(i,a.get(begin));
+				a.set(begin,temp);
+				arrange(a, begin + 1, b);
+				temp = a.get(i);
+				a.set(i,a.get(begin));
+				a.set(begin,temp);
 			}
 		}
 	}
@@ -81,7 +88,7 @@ public class Main
 		int []a = new int[5];
 		for(int i = 0; i < a.length; i++)
 			a[i] = i;
-		arrange(a,1);
+		//arrange(a,1);
 		
 		
 		
@@ -142,7 +149,7 @@ public class Main
 		//test
 		
 		
-		log.close();
+		//log.close();
 	}
 }
 

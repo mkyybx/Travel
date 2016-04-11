@@ -39,7 +39,7 @@ public class Login extends JFrame
 		lg = new Login();
 		lg.pack();
 		lg.setLocationRelativeTo(null);
-		//lg.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		lg.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		lg.setVisible(true);
 	}
 	
@@ -106,7 +106,7 @@ public class Login extends JFrame
 					{
 						if (result.getInt("state") == 0) {
 							lg.dispatchEvent(new WindowEvent(lg, WindowEvent.WINDOW_CLOSING));
-							//lg.dispose();
+							lg.dispose();
 							MainFrameBlank.MFBMain();
 						}
 						else {
@@ -243,9 +243,9 @@ class Search extends JFrame//查询状态框的类
 			{
 				if(!Showmap.smap.isShowing())//按下时调用Showmap.ShowmapMain()显示地图
 				{
-					s.setVisible(false);
+					//s.setVisible(false);
 					Showmap.smap.setVisible(true);
-					//s.dispatchEvent(new WindowEvent(s, WindowEvent.WINDOW_CLOSING));
+					s.dispatchEvent(new WindowEvent(s, WindowEvent.WINDOW_CLOSING));
 				}
 //				s.setVisible(false);
 //				Showmap.smap.repaint();

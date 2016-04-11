@@ -1,4 +1,5 @@
 
+import java.io.PrintWriter;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,6 +18,7 @@ public class Calculate {
 	public static int cityNum = MainFrameBlank.all.size();//城市个数
 	
 	public static long minValue;//用于剪枝，记录排列时最优数值
+	public static long minValueAux;//用于剪枝，记录排列时最优数值
 	public static int[] sequence;//最优顺序
 	public static Lock signalminValue;
 	public static Lock[] signalresult = new Lock[cityNum + 1];
@@ -65,8 +67,9 @@ public class Calculate {
 		if (a.length - begin == 1) {
 			//executor.execute(new minDij(a.clone(), MainFrameBlank.strategy == 1 ? true : false));
 			minDij(isTime, r, a[begin], a[begin - 1]);
-			if ((isTime ? r.time : r.money) < minValue) {
+			if ((isTime ? r.time : r.money) < minValue || ((isTime ? r.time : r.money) == minValue && (isTime ? r.money : r.time) < minValueAux)) {
 				minValue = (isTime ? r.time : r.money);
+				minValueAux = (isTime ? r.money : r.time);
 				sequence = a.clone();
 			}
 			allcount++;
@@ -80,6 +83,11 @@ public class Calculate {
 				a[i] = a[begin];
 				a[begin] = temp;
 				ReturnResult r1 = minDij(isTime, r.clone(), a[begin], a[begin - 1]);//r之后为到begin的最短
+				for (int j = 0; j <= begin; j++) {
+					Main.log.print(selected.get(a[j]).cityId);
+				}
+				Main.log.println("\t" + r.money);
+				Main.log.flush();
 				if ((isTime ? r1.time : r1.money) > minValue) {
 					count++;
 					continue;
@@ -101,6 +109,7 @@ public class Calculate {
 		allcount = 0;
 		//初始化
 		minValue = Long.MAX_VALUE;//用于剪枝，记录排列时最优数值
+		minValueAux = Long.MAX_VALUE;
 		signalminValue = new ReentrantLock();
 		s = null;//用于记录提示语
 		sqls = null;//用于写入数据库，数据格式：时间,城市/车次以#结束
@@ -114,7 +123,7 @@ public class Calculate {
 				Dij(selected, false, true, 0, 0);				
 		}
 		else {
-			minValue = Long.MAX_VALUE;
+			
 			//排列，递归调用
 			ArrayList<city> copySelected = new ArrayList<city>();
 			copySelected.addAll(selected);
@@ -125,10 +134,14 @@ public class Calculate {
 			overall = 0;
 			finished = 0;
 			long time1 = System.currentTimeMillis();
+			//test
+			//Main.arrange(selected, 1, a);
+			//test
 			arrange(MainFrameBlank.strategy == 1 ? true : false, a, 1, new ReturnResult(MainFrameBlank.startTime, 0));
+			Main.log.println();
 			//executor.awaitTermination(15, TimeUnit.SECONDS);
 			for (int i = 0; i < sequence.length; i++) {
-				System.out.println(sequence[i]);
+				System.out.print(sequence[i] + " ");
 				copySelected.set(i, selected.get(sequence[i]));
 			}
 			
@@ -144,6 +157,14 @@ public class Calculate {
 			System.out.println((time * 1.0) / (System.currentTimeMillis() - time1));
 			System.out.println("count="+count+"allcount:"+allcount);
 			//test
+			for (int i = 0; i < selected.size(); i++) {
+				System.out.print(selected.get(sequence[i]).name + " ");
+			}
+			System.out.println();
+			for (int i = 0; i < selected.size(); i++) {
+				System.out.print(copySelected.get(i).name + " ");
+			}
+			System.out.println();
 			Dij(copySelected, MainFrameBlank.strategy == 1 ? true : false, true, 0, 0);
 			//executor.awaitTermination(15, TimeUnit.SECONDS);	
 			
@@ -235,8 +256,10 @@ public class Calculate {
 					}
 				}
 				if (canTerminate) {
-					for (int i = 1; i <= cityNum; i++)
-						dataBuffer[cityNo][i][Time / 3600000][isTime ? 0 : 1] = isTime ? r[i].minTime : r[i].minPrice;
+					for (int i = 1; i <= cityNum; i++) {
+						dataBuffer[cityNo][i][Time / 3600000][0] = r[i].minTime;
+						dataBuffer[cityNo][i][Time / 3600000][1] = r[i].minPrice;
+					}
 					return;
 				}
 				/*/test
@@ -374,7 +397,7 @@ public class Calculate {
 					startTime = r[nextCity].minTime;
 					s.append("\n");
 					if (i + 1 == selected.size() - 1) {
-						sqls.append(sqltime(r[selected.get(i + 1).cityId].minTime) + "," + selected.get(i + 1).cityId + "#");
+						sqls.append(sqltime(r[selected.get(i + 1).cityId].minTime) + "," + selected.get(i + 1).cityId);
 						sqlcount+=2;
 					}
 					break;
@@ -390,6 +413,10 @@ public class Calculate {
 			
 		}
 		s.append("总票价：" + totalPrice + "元");
+		//test
+		if (totalPrice != minValue)
+			System.out.println("Dij="+totalPrice+"minDij="+minValue);
+		//test
 		signalminValue.lock();
 		if (isOrdered || (!isOrdered && ((!isTime && totalPrice < minValue) || (isTime && startTime <minValue)))) {
 			minValue = isTime ? startTime : totalPrice;
@@ -412,10 +439,13 @@ public class Calculate {
 			int idCity = selected.get(currentcity).cityId;//当前城市ID
 			int nextCity = selected.get(nextcity).cityId;//下个城市ID
 			
-			if (dataBuffer[idCity][nextCity][(int)(r.time % (24 * 3600000) / 3600000)][isTime ? 0 : 1] == 0)
+			if (dataBuffer[idCity][nextCity][(int)(r.time % (24 * 3600000) / 3600000)][isTime ? 0 : 1] == 0) {
 				Dij(null, isTime, false, idCity, (int)(r.time % (24 * 3600000)));
-			if (!isTime)
-				r.money += dataBuffer[idCity][nextCity][(int)(r.time % (24 * 3600000) / 3600000)][1];
+				//for (int i = 0; i < MainFrameBlank.all.size(); i++)
+				//	System.out.printf("dataBuffer[%s][%d][%d][1]=%d\n",selected.get(currentcity).name, i,(int)(r.time % (24 * 3600000) / 3600000),dataBuffer[idCity][i][(int)(r.time % (24 * 3600000) / 3600000)][isTime ? 0 : 1]);
+			}
+			
+			r.money += dataBuffer[idCity][nextCity][(int)(r.time % (24 * 3600000) / 3600000)][1];
 			r.time += dataBuffer[idCity][nextCity][(int)(r.time % (24 * 3600000) / 3600000)][0] - (r.time % (24 * 3600000));	
 			r.time += selected.get(nextcity).stayTime;
 			return r;

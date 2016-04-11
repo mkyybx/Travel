@@ -1,4 +1,4 @@
-﻿
+
 import java.io.*;
 import java.sql.*;
 import java.text.SimpleDateFormat;
@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Main 
 {
-	public static int[] MAPID = new int[1];
+	public static int[] MAPID = new int[300];
 	public static Statement st;//公共语句
 	public static ResultSet result;//公共语句
 	public static PrintWriter log;//日志写入对象
@@ -55,28 +55,21 @@ public class Main
 		p.repaint();
 	}
 	
-	static void arrange(ArrayList<city> a, int begin, int[] b) throws Exception{
-		if (a.size() - begin == 2) {
-			Calculate.arrange(MainFrameBlank.strategy == 1 ? true : false, b, 1, new ReturnResult(MainFrameBlank.startTime, 0));
-			for (int i = 0; i < b.length; i++) {
-				System.out.print(Calculate.sequence[i]);
-			}
-			System.out.println("\n" + Calculate.minValue);
-			ArrayList<city> c = new ArrayList<city>();
-			c.addAll(a);
-			Calculate.Dij(c, false, true, 0, 0);
-			Calculate.minValue = Long.MAX_VALUE;
-			Calculate.minValueAux = Long.MAX_VALUE;
+	static void arrange(int[] a, int begin) throws Exception{
+		if (a.length - begin == 2) {
+			for(int i = 0; i < a.length; i++)
+				System.out.print(a[i]);
+			System.out.println();
 		}
 		else {
-			for (int i = begin; i < a.size() - 1; i++) {
-				city temp = a.get(i);
-				a.set(i,a.get(begin));
-				a.set(begin,temp);
-				arrange(a, begin + 1, b);
-				temp = a.get(i);
-				a.set(i,a.get(begin));
-				a.set(begin,temp);
+			for (int i = begin; i < a.length - 1; i++) {
+				int temp = a[i];
+				a[i] = a[begin];
+				a[begin] = temp;
+				arrange(a, begin + 1);
+				temp = a[i];
+				a[i] = a[begin];
+				a[begin] = temp;
 			}
 		}
 	}
@@ -88,7 +81,7 @@ public class Main
 		int []a = new int[5];
 		for(int i = 0; i < a.length; i++)
 			a[i] = i;
-		//arrange(a,1);
+		arrange(a,1);
 		
 		
 		
@@ -133,23 +126,27 @@ public class Main
 			MainFrameBlank.unselected.add(new city(result.getString(3).charAt(0),result.getString(2),Integer.parseInt(result.getString(1))));
 		MainFrameBlank.all.addAll(MainFrameBlank.unselected);
 		
-		//初始化buffer
+		//初始化bufferg
 		result = st.executeQuery("select * from city order by idcity asc");
 		Connection[] tempconnection = new Connection[MainFrameBlank.all.size() + 1]; 
 		Statement[] tempst = new Statement[MainFrameBlank.all.size() + 1];
 		buffer = new ResultSet[MainFrameBlank.all.size() + 1];
 		while(result.next()) {
-			tempconnection[result.getInt("idCity")] = DriverManager.getConnection("jdbc:mysql://localhost/travel","root","huang");
+			//tempconnection[result.getInt("idCity")] = DriverManager.getConnection("jdbc:mysql://localhost/travel","root","huang");
+			tempconnection[result.getInt("idCity")] = DriverManager.getConnection("jdbc:mysql://10.201.11.206/travel","mky0","123456");
 			tempst[result.getInt("idCity")] = tempconnection[result.getInt("idCity")].createStatement();
 			buffer[result.getInt("idCity")]=tempst[result.getInt("idCity")].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + result.getString("cityname") + "'");
+
 		}
+		//Lock 
+		Showmap.ShowmapMain();
 		Login.login();//登录，交给下一个函数
 		//test
 		//MainFrameBlank.MFBMain();
 		//test
 		
 		
-		//log.close();
+		log.close();
 	}
 }
 

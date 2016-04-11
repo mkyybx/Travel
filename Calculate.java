@@ -23,7 +23,7 @@ public class Calculate {
 	public static Lock signalminValue;
 	public static Lock[] signalresult = new Lock[cityNum + 1];
 	public static StringBuilder s;//用于记录提示语
-	public static StringBuilder sqls;//用于写入数据库，数据格式：最开始有一个数据表示后面的数据个数，每个逗号算一个。时间,城市/车次以#结束
+	public static StringBuilder sqls;//用于写入数据库，数据格式：每个逗号算一个。时间,城市/车次
 	public static int sqlcount;//统计写入sql route字段的数字数量
 	
 	public static long[][][][] dataBuffer;//仅当递归时启用[from][arrive][time][money]
@@ -83,11 +83,11 @@ public class Calculate {
 				a[i] = a[begin];
 				a[begin] = temp;
 				ReturnResult r1 = minDij(isTime, r.clone(), a[begin], a[begin - 1]);//r之后为到begin的最短
-				for (int j = 0; j <= begin; j++) {
-					Main.log.print(selected.get(a[j]).cityId);
-				}
-				Main.log.println("\t" + r.money);
-				Main.log.flush();
+				//for (int j = 0; j <= begin; j++) {
+				//	Main.log.print(selected.get(a[j]).cityId);
+				//}
+				//Main.log.println("\t" + r.money);
+				//Main.log.flush();
 				if ((isTime ? r1.time : r1.money) > minValue) {
 					count++;
 					continue;
@@ -174,11 +174,11 @@ public class Calculate {
 		int choice = JOptionPane.showConfirmDialog(null, s.append(sqls), "确认",JOptionPane.YES_NO_OPTION);
 		if (choice == 0) {
 			//向数据库写入真实出发时间，行程数据
-			sqls.insert(0, sqlcount).insert(1, ',');
+			//sqls.insert(0, sqlcount).insert(1, ',');
 			st.executeUpdate("update users set state = 1, starttime = " + System.currentTimeMillis() + ", route = '" + sqls + "', prompt = '" + s + "' where user = '" + Main.NAME + "'");
 			MainFrameBlank.frame.dispose();
 			Thread.sleep(500);
-			Login.lg.setVisible(true);
+			Search.Inquiry();
 			Main.windowLock.unlock();
 			//下一步
 		}

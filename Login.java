@@ -218,11 +218,11 @@ class Search extends JFrame//查询状态框的类
 	public Search() throws Exception
 	{
 		//初始化行程信息
-		Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"'");
-		Main.result.next();
-		String prompt = Main.result.getString("prompt");//读取路线描述
+//		Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"'");
+//		Main.result.next();
+//		String prompt = Main.result.getString("prompt");//读取路线描述
 		//数据数组
-		String temp = Main.result.getString("route");
+		//String temp = Main.result.getString("route");
 		//int[][] route = new int
 		
 		JPanel line=new JPanel();//显示线路的jpanel
@@ -233,6 +233,15 @@ class Search extends JFrame//查询状态框的类
 		
 		li.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				String prompt = null;
+				try {
+					Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"'");
+					Main.result.next();
+					prompt = Main.result.getString("prompt");//读取路线描述
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+				
 				Main.showMessage(prompt, null, false);
 			}
 		});
@@ -246,7 +255,9 @@ class Search extends JFrame//查询状态框的类
 				if(!Showmap.smap.isShowing())//按下时调用Showmap.ShowmapMain()显示地图
 				{
 					s.setVisible(false);
+					Showmap.smap.repaint();
 					Showmap.smap.setVisible(true);
+					//Showmap.ShowmapMain();
 					//s.dispatchEvent(new WindowEvent(s, WindowEvent.WINDOW_CLOSING));
 				}
 //				s.setVisible(false);
@@ -262,11 +273,15 @@ class Search extends JFrame//查询状态框的类
 		 Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
 		 Main.result.next();
 		 String  starttime= Main.result.getString("starttime");
-		 long systemt=System.currentTimeMillis()-Long.parseLong(starttime);
-		 long second=systemt/1000%60;
-		 long minute=systemt/1000/60%60;
-		 long hour=systemt/1000/60/60%24;
-		 JLabel Time=new JLabel(hour+":"+minute+":"+second);
+		 String  in= Main.result.getString("route");
+		 String [] stateroute=in.split(",");//string以“，”为分隔符转化为string数组
+		 
+		 long systemt=(System.currentTimeMillis()-Long.parseLong(starttime));
+//		 long second=systemt/1000%60;
+//		 long minute=systemt/1000/60%60;
+		 long hour=systemt/1000;
+		 hour+=Long.parseLong(stateroute[0])/10;
+		 JLabel Time=new JLabel("第"+(hour/24+1)+"天 "+hour%24+"时");
 		 javax.swing.Timer timer=new javax.swing.Timer(1000,new ActionListener() //定时器
 		 {
 			public void actionPerformed(ActionEvent e) 
@@ -275,11 +290,14 @@ class Search extends JFrame//查询状态框的类
 					Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
 					Main.result.next();
 					String  starttime= Main.result.getString("starttime");
-					long systemt=System.currentTimeMillis()-Long.parseLong(starttime);
-					long second=systemt/1000%60;
-					long minute=systemt/1000/60%60;
-					long hour=systemt/1000/60/60%24;
-					Time.setText(hour+":"+minute+":"+second);
+					String  in= Main.result.getString("route");
+					String [] stateroute=in.split(",");//string以“，”为分隔符转化为string数组
+					long systemt=(System.currentTimeMillis()-Long.parseLong(starttime))*3600;
+//					long second=systemt/1000%60;
+//					long minute=systemt/1000/60%60;
+					long hour=systemt/1000/60/60;
+					hour+=Long.parseLong(stateroute[0])/10;
+					Time.setText("第"+(hour/24+1)+"天 "+hour%24+"时");
 				} catch (SQLException e1) {
 					e1.printStackTrace();
 				}
@@ -309,12 +327,12 @@ class Search extends JFrame//查询状态框的类
 					Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
 					Main.result.next();
 					String  starttime= Main.result.getString("starttime");
-					long systemt=System.currentTimeMillis()-Long.parseLong(starttime);
-					long hour=systemt/1000/60/60%24;
+					long systemt=(System.currentTimeMillis()-Long.parseLong(starttime));
+					long hour=systemt/1000;
 					int i=0;
+					hour+=Long.parseLong(stateroute[0])/10;
 					for(;i<stateroute.length-3;i+=2)
 					{
-						hour+=Long.parseLong(stateroute[0])/10;
 						if(i%2==0&&Long.parseLong(stateroute[i])/10<=hour&&Long.parseLong(stateroute[i+2])/10>hour)
 						{
 							if(Character.isDigit(stateroute[i+1].toCharArray()[0]))
@@ -329,6 +347,12 @@ class Search extends JFrame//查询状态框的类
 							}
 							break;
 						}
+					}
+					if(i==stateroute.length-2)
+					{
+						Main.result = Main.st.executeQuery("select * from city where idcity='"+stateroute[i+1]+"';" );
+						Main.result.next();
+						state.setText(Main.result.getString("cityname"));
 					}
 					repaint();
 				} catch (SQLException e1) {
@@ -347,6 +371,73 @@ class Search extends JFrame//查询状态框的类
 		 {
 			public void actionPerformed(ActionEvent e) 
 			{
+				try {
+					Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
+					Main.result.next();
+					String  in= Main.result.getString("route");
+					System.out.println(in);
+					String [] stateroute=in.split(",");//string以“，”为分隔符转化为string数组
+					//System.out.println(stateroute[3]);
+				
+					Main.result = Main.st.executeQuery("select * from users where user='"+Main.NAME+"';" );
+					Main.result.next();
+					String  starttime= Main.result.getString("starttime");
+					System.out.println(starttime);
+					long systemt=System.currentTimeMillis()-Long.parseLong(starttime);
+					System.out.println(systemt);
+					long hour=systemt/1000;
+					System.out.println(hour);
+					int i=0;
+					hour+=Long.parseLong(stateroute[0])/10;
+					System.out.println(hour);
+					for(;i<stateroute.length-3;i+=2)
+					{
+						if(i%2==0&&Long.parseLong(stateroute[i])/10<=hour&&Long.parseLong(stateroute[i+2])/10>hour)
+						{
+							if(!Character.isDigit(stateroute[i+1].toCharArray()[0]))
+							{
+								for(;i<stateroute.length-3;i+=2)
+									if(Character.isDigit(stateroute[i+1].toCharArray()[0]))
+											break;
+							}
+							
+							Main.result = Main.st.executeQuery("select * from city where idcity='"+stateroute[i+1]+"';" );
+							Main.result.next();
+							city startCity=new city(Main.result.getString(3).charAt(0),Main.result.getString(2),Integer.parseInt(Main.result.getString(1)));
+//								state.setText(Main.result.getString("cityname"));
+							System.out.println(startCity.name);
+							
+							MainFrameBlank.unselected.clear();
+							MainFrameBlank.selected.clear();
+							MainFrameBlank.selected.add(startCity);
+							MainFrameBlank.unselected.addAll(MainFrameBlank.all);
+							MainFrameBlank.unselected.remove(startCity);
+							break;
+						}
+					}
+					
+					if(i==stateroute.length-2)
+					{
+						Main.result = Main.st.executeQuery("select * from city where idcity='"+stateroute[i+1]+"';" );
+						Main.result.next();
+						city startCity=new city(Main.result.getString(3).charAt(0),Main.result.getString(2),Integer.parseInt(Main.result.getString(1)));
+//							state.setText(Main.result.getString("cityname"));
+						
+						MainFrameBlank.unselected.clear();
+						MainFrameBlank.selected.clear();
+						MainFrameBlank.selected.add(startCity);
+						//MainFrameBlank.unselected.addAll(MainFrameBlank.all);
+						for(int k=0;k<MainFrameBlank.all.size();k++)
+							if(!startCity.name.equals(MainFrameBlank.all.get(k).name))
+								MainFrameBlank.unselected.add(MainFrameBlank.all.get(k));
+						//MainFrameBlank.unselected.remove(startCity);
+					}
+					
+					repaint();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+				
 				MainFrameBlank.MFBMain();
 				s.setVisible(false);
 //				if(!MainFrameBlank.frame.isShowing())//调用MainFrameBlank.MFBMain()更改行程

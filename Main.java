@@ -143,9 +143,9 @@ public class Main
 			tempst[result.getInt("idCity")] = tempconnection[result.getInt("idCity")].createStatement();
 			buffer[result.getInt("idCity")]=tempst[result.getInt("idCity")].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + result.getString("cityname") + "'");
 		}
-		//Login.login();//登录，交给下一个函数
+		Login.login();//登录，交给下一个函数
 		//test
-		MainFrameBlank.MFBMain();
+		//MainFrameBlank.MFBMain();
 		//test
 		
 		

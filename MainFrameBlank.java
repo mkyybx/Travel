@@ -275,7 +275,8 @@ public class MainFrameBlank extends JFrame {
 		});
 		jbtcancel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.exit(0);
+				MainFrameBlank.frame.dispose();
+				Search.s.setVisible(true);
 			}
 		});
 		pd.add(jbtok);

@@ -119,8 +119,9 @@ public class Calculate {
 		if (MainFrameBlank.isOrdered || selected.size() <= 3) {			
 			if (MainFrameBlank.strategy == 1)
 				Dij(selected, true, true, 0, 0);
-			else if (MainFrameBlank.strategy == 2)
-				Dij(selected, false, true, 0, 0);				
+			else 
+				Dij(selected, false, true, 0, 0);	
+			
 		}
 		else {
 			
@@ -171,7 +172,7 @@ public class Calculate {
 		}
 		selected.remove(selected.size() - 1);
 		//结果处理
-		int choice = JOptionPane.showConfirmDialog(null, s.append(sqls), "确认",JOptionPane.YES_NO_OPTION);
+		int choice = JOptionPane.showConfirmDialog(null, s, "确认",JOptionPane.YES_NO_OPTION);
 		if (choice == 0) {
 			//向数据库写入真实出发时间，行程数据
 			//sqls.insert(0, sqlcount).insert(1, ',');

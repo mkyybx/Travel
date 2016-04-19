@@ -95,7 +95,7 @@ public class Showmap extends JFrame
 				ex.printStackTrace();
 			}
 			
-			ImageIcon image=new ImageIcon("img/map.jpg");
+			ImageIcon image=new ImageIcon("src/map.jpg");
 			Dimension size=this.getSize();//使图像比例随窗口变化
 			g.drawImage(image.getImage(), 0, 0, size.width,size.height,null);
 			
@@ -127,7 +127,8 @@ public class Showmap extends JFrame
 				}
 			}
 			
-			g.setColor(Color.black);
+			g.setColor(Color.RED);
+			
 			int [] mxc=new int[num];
 			int [] myc=new int[num];
 			for(int i=0;i<num;i++)//输出各个行车路线

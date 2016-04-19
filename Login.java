@@ -298,7 +298,7 @@ class Search extends JFrame//查询状态框的类
 					long hour=systemt/1000/60/60;
 					hour+=Long.parseLong(stateroute[0])/10;
 					Time.setText("第"+(hour/24+1)+"天 "+hour%24+"时");
-				} catch (SQLException e1) {
+				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
 				
@@ -331,6 +331,18 @@ class Search extends JFrame//查询状态框的类
 					long hour=systemt/1000;
 					int i=0;
 					hour+=Long.parseLong(stateroute[0])/10;
+					if (hour * 10 >= Long.parseLong(stateroute[stateroute.length - 2])) {
+						Main.showMessage("您已到达本次旅行的终点！", null, false);
+						Main.st.executeUpdate("update users set state = 0, starttime = null, route = null, prompt = null");
+						MainFrameBlank.unselected.clear();
+						MainFrameBlank.selected.clear();
+						MainFrameBlank.unselected.addAll(MainFrameBlank.all);
+						for (int j = 0; j < MainFrameBlank.all.size(); j++) {
+							MainFrameBlank.all.get(j).stayTime = 0;
+						}
+						s.setVisible(false);
+						MainFrameBlank.MFBMain();
+					}
 					for(;i<stateroute.length-3;i+=2)
 					{
 						if(i%2==0&&Long.parseLong(stateroute[i])/10<=hour&&Long.parseLong(stateroute[i+2])/10>hour)
@@ -410,8 +422,11 @@ class Search extends JFrame//查询状态框的类
 							MainFrameBlank.unselected.clear();
 							MainFrameBlank.selected.clear();
 							MainFrameBlank.selected.add(startCity);
-							MainFrameBlank.unselected.addAll(MainFrameBlank.all);
-							MainFrameBlank.unselected.remove(startCity);
+							for(int k=0;k<MainFrameBlank.all.size();k++) {
+								MainFrameBlank.all.get(k).stayTime = 0;
+								if(!startCity.name.equals(MainFrameBlank.all.get(k).name))
+									MainFrameBlank.unselected.add(MainFrameBlank.all.get(k));
+							}
 							break;
 						}
 					}
@@ -427,9 +442,11 @@ class Search extends JFrame//查询状态框的类
 						MainFrameBlank.selected.clear();
 						MainFrameBlank.selected.add(startCity);
 						//MainFrameBlank.unselected.addAll(MainFrameBlank.all);
-						for(int k=0;k<MainFrameBlank.all.size();k++)
+						for(int k=0;k<MainFrameBlank.all.size();k++) {
+							MainFrameBlank.all.get(k).stayTime = 0;
 							if(!startCity.name.equals(MainFrameBlank.all.get(k).name))
 								MainFrameBlank.unselected.add(MainFrameBlank.all.get(k));
+						}
 						//MainFrameBlank.unselected.remove(startCity);
 					}
 					

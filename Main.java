@@ -1,4 +1,4 @@
-
+﻿
 import java.io.*;
 import java.sql.*;
 import java.text.SimpleDateFormat;
@@ -107,7 +107,7 @@ public class Main
 		//建立连接
 		try 
 		{
-			Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/travel","root","huang");
+			Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/travel","mky0","123456");
 			st = connection.createStatement();
 		}
 		catch (Exception e) 
@@ -133,7 +133,7 @@ public class Main
 		buffer = new ResultSet[MainFrameBlank.all.size() + 1];
 		while(result.next()) {
 			//tempconnection[result.getInt("idCity")] = DriverManager.getConnection("jdbc:mysql://localhost/travel","root","huang");
-			tempconnection[result.getInt("idCity")] = DriverManager.getConnection("jdbc:mysql://10.201.11.206/travel","mky0","123456");
+			tempconnection[result.getInt("idCity")] = DriverManager.getConnection("jdbc:mysql://localhost/travel","mky0","123456");
 			tempst[result.getInt("idCity")] = tempconnection[result.getInt("idCity")].createStatement();
 			buffer[result.getInt("idCity")]=tempst[result.getInt("idCity")].executeQuery("select departtime, arrivetime, price, number, idcity from transport, city where arrivecity = cityname and departcity = '" + result.getString("cityname") + "'");
 
